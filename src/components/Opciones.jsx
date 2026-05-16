@@ -6,7 +6,7 @@ export function ArabicFree() {
   return (
     <section id="arabe-libre" className="arabic-free">
       <div className="arabic-free-media" aria-label="Mesa con comida árabe" />
-      <div className="arabic-free-content">
+      <div className="arabic-free-content featured-section-copy">
         <span className="eyebrow">Árabe libre</span>
         <h2>Vení con hambre</h2>
         <p>

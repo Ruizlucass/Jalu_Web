@@ -5,7 +5,7 @@ import { trackEvent } from "../helpers/tracking.js";
 export default function Sucursales() {
   return (
     <section id="sucursales" className="section">
-      <div className="section-header">
+      <div className="section-header featured-section-header">
         <div>
           <span className="eyebrow">Sucursales</span>
           <h2 className="section-title">Siempre cerca</h2>

@@ -51,6 +51,43 @@
   line-height: 1.45;
 }
 
+.featured-section-header {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.featured-section-header > div {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+}
+
+.featured-section-copy {
+  justify-items: center;
+  text-align: center;
+}
+
+.featured-section-header .eyebrow,
+.featured-section-copy .eyebrow {
+  padding: 10px 14px;
+  font-size: clamp(0.95rem, 2.2vw, 1.25rem);
+}
+
+.featured-section-header .section-title,
+.featured-section-copy h2 {
+  font-size: clamp(2.8rem, 8vw, 6.4rem);
+  text-align: center;
+}
+
+.featured-section-header .section-note,
+.featured-section-copy p {
+  max-width: 760px;
+  font-size: clamp(1.08rem, 2.3vw, 1.35rem);
+  text-align: center;
+}
+
 .eyebrow {
   display: block;
   width: fit-content;
