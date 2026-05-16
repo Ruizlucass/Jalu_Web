@@ -82,14 +82,6 @@ export function FinalCta() {
     <section className="section final-cta">
       <div>
         <h2>¿Qué vas a comer hoy?</h2>
-        <div className="final-actions">
-          <Button href="#pedidos" onClick={() => trackEvent("click_pedir_final")}>
-            Pedir ahora
-          </Button>
-          <Button variant="dark" href="#reservas" onClick={() => trackEvent("click_reservar_final")}>
-            Reservar mesa
-          </Button>
-        </div>
       </div>
     </section>
   );

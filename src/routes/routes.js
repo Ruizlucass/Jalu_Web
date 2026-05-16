@@ -3,6 +3,7 @@ import Login from "../pages/Login.jsx";
 import Perfil from "../pages/Perfil.jsx";
 import Register from "../pages/Register.jsx";
 import Reservas from "../pages/Reservas.jsx";
+import SobreNosotros from "../pages/SobreNosotros.jsx";
 
 export const routes = [
   { path: "/", label: "Home", component: Home },
@@ -10,4 +11,5 @@ export const routes = [
   { path: "/register", label: "Registro", component: Register },
   { path: "/perfil", label: "Perfil", component: Perfil },
   { path: "/reservas", label: "Reservas", component: Reservas },
+  { path: "/sobre-nosotros", label: "Sobre nosotros", component: SobreNosotros },
 ];

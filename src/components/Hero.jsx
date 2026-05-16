@@ -39,7 +39,7 @@ export default function Hero() {
 
       {/* Content */}
       <div className="hero-inner">
-        <span className="eyebrow">Fast food árabe moderno</span>
+        <span></span>
 
         <h1>El verdadero sabor árabe, como querés comerlo</h1>
 
@@ -65,22 +65,6 @@ export default function Hero() {
           </Button>
         </div>
 
-        <div className="hero-statbar" aria-label="Datos destacados">
-          <div className="hero-stat">
-            <strong>6</strong>
-            <span>Sucursales</span>
-          </div>
-
-          <div className="hero-stat">
-            <strong>Libre</strong>
-            <span>Salón</span>
-          </div>
-
-          <div className="hero-stat">
-            <strong>Rápido</strong>
-            <span>Delivery</span>
-          </div>
-        </div>
       </div>
     </section>
   );
