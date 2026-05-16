@@ -2,7 +2,7 @@ export const whatsappBase = "https://wa.me/543810000000";
 
 export const quickLinks = [
   { label: "Pedir delivery", href: "#pedidos" },
-  { label: "Ver menú", href: "#menu" },
+  { label: "Ver menú", href: "/menu" },
   { label: "Árabe libre", href: "#arabe-libre" },
   { label: "Reservar", href: "#reservas" },
 ];

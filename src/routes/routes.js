@@ -1,5 +1,6 @@
 import Home from "../pages/Home.jsx";
 import Login from "../pages/Login.jsx";
+import Menu from "../pages/Menu.jsx";
 import Perfil from "../pages/Perfil.jsx";
 import Register from "../pages/Register.jsx";
 import Reservas from "../pages/Reservas.jsx";
@@ -7,6 +8,7 @@ import SobreNosotros from "../pages/SobreNosotros.jsx";
 
 export const routes = [
   { path: "/", label: "Home", component: Home },
+  { path: "/menu", label: "Menu", component: Menu },
   { path: "/login", label: "Login", component: Login },
   { path: "/register", label: "Registro", component: Register },
   { path: "/perfil", label: "Perfil", component: Perfil },

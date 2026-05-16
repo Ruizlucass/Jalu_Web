@@ -54,8 +54,10 @@ export default function Footer() {
           </h3>
 
           <ul className="space-y-4 text-base text-[#b9b9b9]">
-            <li className="hover:text-[#e71921] cursor-pointer transition">
-              Menú
+            <li>
+              <a className="hover:text-[#e71921] cursor-pointer transition" href="/menu">
+                Menú
+              </a>
             </li>
 
             <li className="hover:text-[#e71921] cursor-pointer transition">

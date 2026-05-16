@@ -25,7 +25,7 @@ export default function Navbar() {
         </a>
 
         <nav className="hidden gap-5 text-[0.9rem] font-extrabold text-[#b9b9b9] min-[960px]:flex" aria-label="Principal">
-          <a className={navLink} href="/#menu">Men&uacute;</a>
+          <a className={navLink} href="/menu">Men&uacute;</a>
           <a className={navLink} href="/#arabe-libre">&Aacute;rabe libre</a>
           <a className={navLink} href="/#club">Club Jalu</a>
           <a className={navLink} href="/sobre-nosotros">Sobre nosotros</a>
@@ -90,7 +90,7 @@ export default function Navbar() {
         }`}
       >
         <nav className="flex flex-col gap-5 py-5 text-lg font-extrabold text-[#b9b9b9]" aria-label="Principal mobile">
-          <a className={navLink} href="/#menu" onClick={closeMenu}>Men&uacute;</a>
+          <a className={navLink} href="/menu" onClick={closeMenu}>Men&uacute;</a>
           <a className={navLink} href="/#arabe-libre" onClick={closeMenu}>&Aacute;rabe libre</a>
           <a className={navLink} href="/#club" onClick={closeMenu}>Club Jalu</a>
           <a className={navLink} href="/sobre-nosotros" onClick={closeMenu}>Sobre nosotros</a>
