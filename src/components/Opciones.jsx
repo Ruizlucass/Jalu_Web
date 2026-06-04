@@ -6,7 +6,7 @@ export function ArabicFree() {
   return (
     <section id="arabe-libre" className="arabic-free">
       <div className="arabic-free-media" aria-label="Mesa con comida árabe" />
-      <div className="arabic-free-content">
+      <div className="arabic-free-content featured-section-copy">
         <span className="eyebrow">Árabe libre</span>
         <h2>Vení con hambre</h2>
         <p>
@@ -82,14 +82,6 @@ export function FinalCta() {
     <section className="section final-cta">
       <div>
         <h2>¿Qué vas a comer hoy?</h2>
-        <div className="final-actions">
-          <Button href="#pedidos" onClick={() => trackEvent("click_pedir_final")}>
-            Pedir ahora
-          </Button>
-          <Button variant="dark" href="#reservas" onClick={() => trackEvent("click_reservar_final")}>
-            Reservar mesa
-          </Button>
-        </div>
       </div>
     </section>
   );

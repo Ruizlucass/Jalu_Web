@@ -1,6 +1,6 @@
 import Navbar from "../components/Navbar.jsx";
 import Hero from "../components/Hero.jsx";
-import { Combos, MenuPreview, QuickAccess } from "../components/Cards.jsx";
+import { Combos, QuickAccess } from "../components/Cards.jsx";
 import { ArabicFree, Club, FinalCta, OrdersAndReservations } from "../components/Opciones.jsx";
 import Sucursales from "../components/Sucursales.jsx";
 import Comentarios from "../components/Comentarios.jsx";
@@ -14,7 +14,6 @@ export default function Home() {
       <Hero />
       <QuickAccess />
       <ArabicFree />
-      <MenuPreview />
       <Combos />
       <Sucursales />
       <Comentarios />
