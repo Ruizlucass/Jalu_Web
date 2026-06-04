@@ -88,7 +88,7 @@ export const branches = [
   },
 {
     name: "Sucursal Centro",
-    zone: "Centro",
+    zone: "Centro", 
     address: "Av. Corrientes 1234",
     googleMaps: "https://maps.google.com",
     map: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3282.634245764168!2d-58.381559!3d-34.603722!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x95bccac5c5c5c5c5%3A0x123456789!2sBuenos%20Aires!5e0!3m2!1ses!2sar!4v1710000000000!5m2!1ses!2sar",
