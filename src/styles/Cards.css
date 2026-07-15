@@ -56,7 +56,6 @@
 }
 
 .product-card,
-.review-card,
 .club-panel,
 .order-panel,
 .reserve-panel {
@@ -96,7 +95,6 @@
 }
 
 .product-body p,
-.review-card p,
 .reserve-panel p,
 .order-panel p,
 .club-panel p {
@@ -105,19 +103,94 @@
   font-weight: 700;
 }
 
+.reviews-section {
+  background:
+    linear-gradient(180deg, rgba(231, 25, 33, 0.08), transparent 42%),
+    #0b0b0b;
+}
+
+.review-grid {
+  gap: 16px;
+}
+
 .review-card {
-  min-height: 138px;
+  position: relative;
+  min-height: 260px;
   display: grid;
   align-content: space-between;
-  gap: 18px;
-  padding: 20px;
+  gap: 20px;
+  padding: clamp(20px, 3vw, 28px);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02));
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 20px 55px rgba(0, 0, 0, 0.28);
+}
+
+.review-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 4px;
+  background: linear-gradient(90deg, var(--red), #ff7a1a);
+}
+
+.review-card-top,
+.review-author {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.review-rating {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 58px;
+  min-height: 38px;
+  border-radius: 6px;
+  background: var(--red);
+  color: var(--white);
+  font-weight: 900;
+}
+
+.review-tag {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 8px 12px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
 }
 
 .review-card strong {
   color: var(--white);
-  font-size: 1.4rem;
-  line-height: 1;
+  font-size: clamp(1.65rem, 3vw, 2.25rem);
+  line-height: 0.95;
   font-weight: 900;
+  text-transform: uppercase;
+}
+
+.review-card p {
+  color: #d8d8d8;
+  font-weight: 750;
+  line-height: 1.5;
+}
+
+.review-author {
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+
+.review-author span {
+  font-weight: 900;
+}
+
+.review-author small {
+  color: var(--muted);
+  font-weight: 800;
   text-transform: uppercase;
 }
 

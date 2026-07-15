@@ -27,6 +27,7 @@ export default function Navbar() {
         <nav className="hidden gap-5 text-[0.9rem] font-extrabold text-[#b9b9b9] min-[960px]:flex" aria-label="Principal">
           <a className={navLink} href="/menu">Men&uacute;</a>
           <a className={navLink} href="/#arabe-libre">&Aacute;rabe libre</a>
+          <a className={navLink} href="/reservas">Pedidos y reservas</a>
           <a className={navLink} href="/#club">Club Jalu</a>
           <a className={navLink} href="/sobre-nosotros">Sobre nosotros</a>
         </nav>
@@ -34,14 +35,14 @@ export default function Navbar() {
         <div className="hidden gap-2 min-[960px]:flex">
           <a
             className={`${buttonBase} bg-transparent text-white`}
-            href="/#pedidos"
+            href="/reservas#pedidos"
             onClick={() => trackEvent("click_pedir_nav")}
           >
             Pedir
           </a>
           <a
             className={`${buttonBase} bg-transparent text-white`}
-            href="/#reservas"
+            href="/reservas#reservas"
             onClick={() => trackEvent("click_reservar_nav")}
           >
             Reservar
@@ -92,6 +93,7 @@ export default function Navbar() {
         <nav className="flex flex-col gap-5 py-5 text-lg font-extrabold text-[#b9b9b9]" aria-label="Principal mobile">
           <a className={navLink} href="/menu" onClick={closeMenu}>Men&uacute;</a>
           <a className={navLink} href="/#arabe-libre" onClick={closeMenu}>&Aacute;rabe libre</a>
+          <a className={navLink} href="/reservas" onClick={closeMenu}>Pedidos y reservas</a>
           <a className={navLink} href="/#club" onClick={closeMenu}>Club Jalu</a>
           <a className={navLink} href="/sobre-nosotros" onClick={closeMenu}>Sobre nosotros</a>
         </nav>
@@ -99,7 +101,7 @@ export default function Navbar() {
         <div className="grid gap-2 pb-6">
           <a
             className={`${buttonBase} w-full bg-transparent text-white`}
-            href="/#pedidos"
+            href="/reservas#pedidos"
             onClick={() => {
               trackEvent("click_pedir_nav");
               closeMenu();
@@ -109,7 +111,7 @@ export default function Navbar() {
           </a>
           <a
             className={`${buttonBase} w-full bg-transparent text-white`}
-            href="/#reservas"
+            href="/reservas#reservas"
             onClick={() => {
               trackEvent("click_reservar_nav");
               closeMenu();
