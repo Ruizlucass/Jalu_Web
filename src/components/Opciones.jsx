@@ -13,7 +13,7 @@ export function ArabicFree() {
           Comé todo lo que quieras: sfijas, kipes, shawarma, tablas, salsas y dulces.
           Experiencia de salón para compartir.
         </p>
-        <Button variant="dark" href="#reservas" onClick={() => trackEvent("click_reservar_arabe_libre")}>
+        <Button variant="dark" href="/reservas#reservas" onClick={() => trackEvent("click_reservar_arabe_libre")}>
           Reservar mesa
         </Button>
       </div>

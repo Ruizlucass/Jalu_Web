@@ -37,7 +37,7 @@ export function ProductCard({ product }) {
 
 export function Combos() {
   const featured = products.filter((product) =>
-    ["Shawarma", "Combos", "Sfijas", "Dulces árabes"].includes(product.category)
+    ["Shawarma", "Combos", "Sfijas", "Dulces arabes"].includes(product.category)
   );
 
   return (
@@ -45,7 +45,7 @@ export function Combos() {
       <div className="section-header featured-section-header">
         <div>
           <span className="eyebrow">Combos destacados</span>
-          <h2 className="section-title">Los que salen más</h2>
+          <h2 className="section-title">Los que salen mas</h2>
         </div>
       </div>
       <div className="product-grid">

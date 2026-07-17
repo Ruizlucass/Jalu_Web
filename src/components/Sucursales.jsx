@@ -64,7 +64,7 @@ export default function Sucursales() {
                 </Button>
 
                 <Button
-                  href="#pedidos"
+                  href="/reservas#pedidos"
                   onClick={() =>
                     trackEvent(`click_pedir_${branch.name}`)
                   }

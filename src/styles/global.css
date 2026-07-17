@@ -205,3 +205,13 @@ p {
   gap: 20px;
 }
 
+.reservation-hero {
+  display: grid;
+  gap: 18px;
+  padding-bottom: 28px;
+}
+
+.reservation-hero .section-note {
+  max-width: 620px;
+}
+

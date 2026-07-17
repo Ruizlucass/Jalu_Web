@@ -1,7 +1,7 @@
 import Navbar from "../components/Navbar.jsx";
 import Hero from "../components/Hero.jsx";
 import { Combos, QuickAccess } from "../components/Cards.jsx";
-import { ArabicFree, Club, FinalCta, OrdersAndReservations } from "../components/Opciones.jsx";
+import { ArabicFree, FinalCta } from "../components/Opciones.jsx";
 import Sucursales from "../components/Sucursales.jsx";
 import Comentarios from "../components/Comentarios.jsx";
 import Footer from "../components/Footer.jsx";
@@ -17,7 +17,6 @@ export default function Home() {
       <Combos />
       <Sucursales />
       <Comentarios />
-      <OrdersAndReservations />
       <FinalCta />
       <Footer />
       <WspFlotante />
