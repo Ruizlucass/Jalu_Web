@@ -48,7 +48,7 @@ export default function Navbar() {
           </a>
           <a className={`${buttonBase} bg-transparent text-white`} href="/login">
             <LoginIcon />
-            Iniciar sesi&oacute;n
+            Iniciar sesion
           </a>
           <a className={`${buttonBase} bg-transparent text-white`} href="/register">
             Registrarse
