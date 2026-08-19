@@ -88,8 +88,8 @@ export default function Navbar() {
               Menú
             </a>
 
-            <a className={navLink} href="/#arabe-libre">
-              Árabe libre
+            <a className={navLink} href="/arabe-libre">
+             Árabe libre
             </a>
 
             <a className={navLink} href="/reservas">
@@ -214,11 +214,11 @@ export default function Navbar() {
             </a>
 
             <a
-              className={navLink}
-              href="/#arabe-libre"
-              onClick={closeMenu}
+            className={navLink}
+            href="/arabe-libre"
+            onClick={closeMenu}
             >
-              Árabe libre
+            Árabe libre
             </a>
 
             <a

@@ -2,8 +2,7 @@ import { useState } from "react";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../firebase";
 
-
-export default function LoginForm() {
+export default function LoginForm({ onSuccess }) {
   const [form, setForm] = useState({
     email: "",
     password: "",
@@ -34,6 +33,9 @@ export default function LoginForm() {
 
       console.log("USUARIO LOGUEADO:", userCredential.user);
 
+      if (onSuccess) {
+        onSuccess(userCredential.user);
+      }
     } catch (error) {
       console.error(error);
 
@@ -54,6 +56,12 @@ export default function LoginForm() {
           setError("El correo electrónico no es válido.");
           break;
 
+        case "auth/network-request-failed":
+          setError(
+            "No se pudo conectar con Firebase. Revisá tu conexión."
+          );
+          break;
+
         default:
           setError("Ocurrió un error al iniciar sesión.");
       }
@@ -64,7 +72,6 @@ export default function LoginForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
-
       <div>
         <label className="mb-2 block text-sm font-semibold text-gray-300">
           Correo electrónico
@@ -119,7 +126,6 @@ export default function LoginForm() {
       >
         ¿Olvidaste tu contraseña?
       </button>
-
     </form>
   );
 }

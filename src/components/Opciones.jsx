@@ -2,57 +2,147 @@ import Button from "./Button.jsx";
 import { branches, whatsappBase } from "../utils/siteData.js";
 import { trackEvent } from "../helpers/tracking.js";
 
+/* =========================================================
+   ÁRABE LIBRE - CTA DEL HOME
+========================================================= */
+
 export function ArabicFree() {
   return (
     <section id="arabe-libre" className="arabic-free">
-      <div className="arabic-free-media" aria-label="Mesa con comida árabe" />
+      <div
+        className="arabic-free-media"
+        aria-label="Mesa con comida árabe"
+      />
+
       <div className="arabic-free-content featured-section-copy">
-        <span className="eyebrow">Árabe libre</span>
-        <h2>Vení con hambre</h2>
+        <span className="eyebrow">
+          La experiencia Jalu
+        </span>
+
+        <h2>¿Venís con hambre?</h2>
+
         <p>
-          Comé todo lo que quieras: sfijas, kipes, shawarma, tablas, salsas y dulces.
-          Experiencia de salón para compartir.
+          Descubrí Árabe Libre: una experiencia para sentarte,
+          compartir y disfrutar nuestros sabores árabes.
         </p>
-        <Button variant="dark" href="/reservas#reservas" onClick={() => trackEvent("click_reservar_arabe_libre")}>
-          Reservar mesa
+
+        <Button
+          variant="dark"
+          href="/arabe-libre"
+          onClick={() =>
+            trackEvent("click_ver_arabe_libre")
+          }
+        >
+          Ver Árabe Libre
         </Button>
       </div>
     </section>
   );
 }
 
+/* =========================================================
+   PEDIDOS Y RESERVAS
+========================================================= */
+
 export function OrdersAndReservations() {
   return (
     <section className="section split-grid">
+      {/* PEDIDOS */}
+
       <div id="pedidos" className="order-panel">
-        <h2 className="panel-title">Pedidos</h2>
-        <p>UX simple: elegís sucursal, elegís canal y salís a WhatsApp, PedidosYa o Rappi.</p>
+        <h2 className="panel-title">
+          Pedidos
+        </h2>
+
+        <p>
+          UX simple: elegís sucursal, elegís canal y salís a
+          WhatsApp, PedidosYa o Rappi.
+        </p>
+
         <div className="form-grid">
-          <select className="field" defaultValue="">
-            <option value="" disabled>Elegir sucursal</option>
+          <select
+            className="field"
+            defaultValue=""
+          >
+            <option value="" disabled>
+              Elegir sucursal
+            </option>
+
             {branches.map((branch) => (
-              <option key={branch.name}>{branch.name}</option>
+              <option key={branch.name}>
+                {branch.name}
+              </option>
             ))}
           </select>
-          <Button href={whatsappBase} onClick={() => trackEvent("click_pedido_whatsapp")}>
+
+          <Button
+            href={whatsappBase}
+            onClick={() =>
+              trackEvent("click_pedido_whatsapp")
+            }
+          >
             Pedir por WhatsApp
           </Button>
-          <Button variant="outline" href="#" onClick={() => trackEvent("click_pedido_apps")}>
+
+          <Button
+            variant="outline"
+            href="#"
+            onClick={() =>
+              trackEvent("click_pedido_apps")
+            }
+          >
             Ver apps
           </Button>
         </div>
       </div>
 
-      <div id="reservas" className="reserve-panel">
-        <h2 className="panel-title">Reservas</h2>
-        <p>Formulario corto y botón directo a WhatsApp para confirmar mesa.</p>
+      {/* RESERVAS */}
+
+      <div
+        id="reservas"
+        className="reserve-panel"
+      >
+        <h2 className="panel-title">
+          Reservas
+        </h2>
+
+        <p>
+          Formulario corto y botón directo a WhatsApp para
+          confirmar mesa.
+        </p>
+
         <div className="form-grid">
-          <input className="field" placeholder="Nombre" />
-          <input className="field" placeholder="Teléfono" />
-          <input className="field" placeholder="Cantidad de personas" />
-          <input className="field" type="date" />
-          <input className="field" type="time" />
-          <Button href={whatsappBase} onClick={() => trackEvent("click_reserva_form")}>
+          <input
+            className="field"
+            placeholder="Nombre"
+          />
+
+          <input
+            className="field"
+            placeholder="Teléfono"
+          />
+
+          <input
+            className="field"
+            placeholder="Cantidad de personas"
+          />
+
+          <input
+            className="field"
+            type="date"
+          />
+
+          <input
+            className="field"
+            type="time"
+          />
+
+          <Button
+            href={whatsappBase}
+            onClick={() =>
+              trackEvent("click_reserva_form")
+            }
+          >
             Reservar por WhatsApp
           </Button>
         </div>
@@ -61,27 +151,60 @@ export function OrdersAndReservations() {
   );
 }
 
+/* =========================================================
+   CLUB JALU
+========================================================= */
+
 export function Club() {
   return (
-    <section id="club" className="section">
+    <section
+      id="club"
+      className="section"
+    >
       <div className="club-panel">
-        <span className="eyebrow">Promos / Club Jalu</span>
-        <h2 className="panel-title">Descuentos que vuelven</h2>
-        <p>2x1, combos por sucursal y registro por email o WhatsApp para activar clientes recurrentes.</p>
+        <span className="eyebrow">
+          Promos / Club Jalu
+        </span>
+
+        <h2 className="panel-title">
+          Descuentos que vuelven
+        </h2>
+
+        <p>
+          2x1, combos por sucursal y registro por email o
+          WhatsApp para activar clientes recurrentes.
+        </p>
+
         <div className="form-grid">
-          <input className="field" placeholder="Email o WhatsApp" />
-          <Button onClick={() => trackEvent("click_club_jalu")}>Entrar al club</Button>
+          <input
+            className="field"
+            placeholder="Email o WhatsApp"
+          />
+
+          <Button
+            onClick={() =>
+              trackEvent("click_club_jalu")
+            }
+          >
+            Entrar al club
+          </Button>
         </div>
       </div>
     </section>
   );
 }
 
+/* =========================================================
+   CTA FINAL
+========================================================= */
+
 export function FinalCta() {
   return (
     <section className="section final-cta">
       <div>
-        <h2>¿Qué vas a comer hoy?</h2>
+        <h2>
+          ¿Qué vas a comer hoy?
+        </h2>
       </div>
     </section>
   );
