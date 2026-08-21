@@ -3,6 +3,7 @@ import Hero from "../components/Hero.jsx";
 import { Combos, QuickAccess } from "../components/Cards.jsx";
 import {
   ArabicFree,
+  Club,
   FinalCta,
 } from "../components/Opciones.jsx";
 import Sucursales from "../components/Sucursales.jsx";
@@ -22,6 +23,8 @@ export default function Home() {
       <ArabicFree />
 
       <Combos />
+
+      <Club />
 
       <Sucursales />
 
