@@ -96,7 +96,7 @@ export default function Navbar() {
               Pedidos y reservas
             </a>
 
-            <a className={navLink} href="/#club">
+            <a className={navLink} href="/club-jalu">
               Club Jalu
             </a>
 
@@ -231,7 +231,7 @@ export default function Navbar() {
 
             <a
               className={navLink}
-              href="/#club"
+              href="/club-jalu"
               onClick={closeMenu}
             >
               Club Jalu

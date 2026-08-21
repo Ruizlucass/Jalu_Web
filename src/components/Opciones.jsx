@@ -47,9 +47,10 @@ export function ArabicFree() {
 export function OrdersAndReservations() {
   return (
     <section className="section split-grid">
-      {/* PEDIDOS */}
 
+      {/* PEDIDOS */}
       <div id="pedidos" className="order-panel">
+
         <h2 className="panel-title">
           Pedidos
         </h2>
@@ -60,6 +61,7 @@ export function OrdersAndReservations() {
         </p>
 
         <div className="form-grid">
+
           <select
             className="field"
             defaultValue=""
@@ -93,15 +95,16 @@ export function OrdersAndReservations() {
           >
             Ver apps
           </Button>
+
         </div>
       </div>
 
       {/* RESERVAS */}
-
       <div
         id="reservas"
         className="reserve-panel"
       >
+
         <h2 className="panel-title">
           Reservas
         </h2>
@@ -112,6 +115,7 @@ export function OrdersAndReservations() {
         </p>
 
         <div className="form-grid">
+
           <input
             className="field"
             placeholder="Nombre"
@@ -145,51 +149,52 @@ export function OrdersAndReservations() {
           >
             Reservar por WhatsApp
           </Button>
+
         </div>
       </div>
+
     </section>
   );
 }
 
 /* =========================================================
-   CLUB JALU
+   CLUB JALU - CTA DEL HOME
 ========================================================= */
 
 export function Club() {
   return (
-    <section
-      id="club"
-      className="section"
-    >
+    <section id="club" className="section">
+
       <div className="club-panel">
+
         <span className="eyebrow">
           Promos / Club Jalu
         </span>
 
         <h2 className="panel-title">
-          Descuentos que vuelven
+          Ser parte tiene beneficios
         </h2>
 
         <p>
-          2x1, combos por sucursal y registro por email o
-          WhatsApp para activar clientes recurrentes.
+          Descuentos, promociones 2x1 y beneficios exclusivos
+          para los que siempre vuelven.
         </p>
 
         <div className="form-grid">
-          <input
-            className="field"
-            placeholder="Email o WhatsApp"
-          />
 
           <Button
+            href="/club-jalu"
             onClick={() =>
-              trackEvent("click_club_jalu")
+              trackEvent("click_ver_club_jalu")
             }
           >
-            Entrar al club
+            Conocer Club Jalu
           </Button>
+
         </div>
+
       </div>
+
     </section>
   );
 }
@@ -201,11 +206,13 @@ export function Club() {
 export function FinalCta() {
   return (
     <section className="section final-cta">
+
       <div>
         <h2>
           ¿Qué vas a comer hoy?
         </h2>
       </div>
+
     </section>
   );
 }
