@@ -68,10 +68,10 @@ export default function ArabeLibre() {
 
       {/* HERO */}
       <section className="relative flex min-h-[78vh] items-center justify-center overflow-hidden px-6 pt-24 text-center">
-        <div className="absolute inset-0 bg-gradient-to-b from-orange-500/10 via-transparent to-[#080808]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#e71921]/12 via-transparent to-[#080808]" />
 
         <div className="relative z-10 mx-auto max-w-4xl">
-          <span className="mb-5 inline-block text-sm font-black uppercase tracking-[0.35em] text-orange-500">
+          <span className="mb-5 inline-block text-sm font-black uppercase tracking-[0.35em] text-[#e71921]">
             La experiencia Jalu
           </span>
 
@@ -79,7 +79,7 @@ export default function ArabeLibre() {
             Árabe Libre
           </h1>
 
-          <p className="mt-4 text-2xl font-black uppercase text-orange-500 sm:text-3xl">
+          <p className="mt-4 text-2xl font-black uppercase text-[#e71921] sm:text-3xl">
             Vení con hambre
           </p>
 
@@ -91,7 +91,7 @@ export default function ArabeLibre() {
           <button
             type="button"
             onClick={handleReservar}
-            className="mt-9 rounded-lg bg-orange-500 px-8 py-4 text-sm font-black uppercase tracking-wide text-white transition hover:-translate-y-1 hover:bg-orange-600"
+            className="mt-9 rounded-lg bg-[#e71921] px-8 py-4 text-sm font-black uppercase tracking-wide text-white transition hover:-translate-y-1 hover:bg-[#ff2a33]"
           >
             Reservar mesa
           </button>
@@ -101,7 +101,7 @@ export default function ArabeLibre() {
       {/* QUÉ INCLUYE */}
       <section className="mx-auto max-w-7xl px-6 py-20">
         <div className="mb-12 text-center">
-          <span className="text-sm font-black uppercase tracking-[0.3em] text-orange-500">
+          <span className="text-sm font-black uppercase tracking-[0.3em] text-[#e71921]">
             Probá de todo
           </span>
 
@@ -119,9 +119,9 @@ export default function ArabeLibre() {
           {comidas.map((comida) => (
             <article
               key={comida.nombre}
-              className="rounded-2xl border border-white/10 bg-[#121212] p-7 transition duration-300 hover:-translate-y-1 hover:border-orange-500/50"
+              className="rounded-2xl border border-white/10 bg-[#121212] p-7 transition duration-300 hover:-translate-y-1 hover:border-[#e71921]/50"
             >
-              <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-full bg-orange-500/10 text-lg font-black text-orange-500">
+              <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-full bg-[#e71921]/10 text-lg font-black text-[#e71921]">
                 +
               </div>
 
@@ -140,7 +140,7 @@ export default function ArabeLibre() {
       {/* PRECIO */}
       <section className="border-y border-white/10 bg-[#101010] px-6 py-20">
         <div className="mx-auto max-w-4xl text-center">
-          <span className="text-sm font-black uppercase tracking-[0.3em] text-orange-500">
+          <span className="text-sm font-black uppercase tracking-[0.3em] text-[#e71921]">
             Precio
           </span>
 
@@ -163,7 +163,7 @@ export default function ArabeLibre() {
       <section className="mx-auto max-w-5xl px-6 py-20">
         <div className="grid gap-10 md:grid-cols-[0.8fr_1.2fr] md:items-start">
           <div>
-            <span className="text-sm font-black uppercase tracking-[0.3em] text-orange-500">
+            <span className="text-sm font-black uppercase tracking-[0.3em] text-[#e71921]">
               Antes de venir
             </span>
 
@@ -184,7 +184,7 @@ export default function ArabeLibre() {
                 key={condicion}
                 className="flex gap-4 rounded-xl border border-white/10 bg-[#121212] p-5"
               >
-                <span className="font-black text-orange-500">
+                <span className="font-black text-[#e71921]">
                   {String(index + 1).padStart(2, "0")}
                 </span>
 
@@ -201,7 +201,7 @@ export default function ArabeLibre() {
       <section className="bg-[#101010] px-6 py-20">
         <div className="mx-auto max-w-7xl">
           <div className="mb-12 text-center">
-            <span className="text-sm font-black uppercase tracking-[0.3em] text-orange-500">
+            <span className="text-sm font-black uppercase tracking-[0.3em] text-[#e71921]">
               Así se vive
             </span>
 
@@ -257,7 +257,7 @@ export default function ArabeLibre() {
       {/* CTA FINAL */}
       <section className="px-6 py-24 text-center">
         <div className="mx-auto max-w-3xl">
-          <span className="text-sm font-black uppercase tracking-[0.3em] text-orange-500">
+          <span className="text-sm font-black uppercase tracking-[0.3em] text-[#e71921]">
             Tu mesa te espera
           </span>
 
@@ -272,7 +272,7 @@ export default function ArabeLibre() {
           <button
             type="button"
             onClick={handleReservar}
-            className="mt-8 rounded-lg bg-orange-500 px-9 py-4 text-sm font-black uppercase tracking-wide transition hover:-translate-y-1 hover:bg-orange-600"
+            className="mt-8 rounded-lg bg-[#e71921] px-9 py-4 text-sm font-black uppercase tracking-wide transition hover:-translate-y-1 hover:bg-[#ff2a33]"
           >
             Reservar mesa
           </button>

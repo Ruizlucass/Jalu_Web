@@ -34,7 +34,7 @@ export default function LoginModal({ onClose, onRegister }) {
         <button
           type="button"
           onClick={onRegister}
-          className="mt-5 w-full text-sm text-gray-400 transition hover:text-orange-400"
+        className="mt-5 w-full text-sm text-gray-400 transition hover:text-[#e71921]"
         >
           ¿No tenés una cuenta? Registrate
         </button>

@@ -90,10 +90,10 @@ export default function ClubJalu() {
 
       {/* HERO */}
       <section className="relative flex min-h-[75vh] items-center justify-center overflow-hidden px-6 pt-24 text-center">
-        <div className="absolute inset-0 bg-gradient-to-b from-orange-500/10 via-transparent to-[#080808]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#e71921]/12 via-transparent to-[#080808]" />
 
         <div className="relative z-10 mx-auto max-w-4xl">
-          <span className="mb-5 inline-block text-sm font-black uppercase tracking-[0.35em] text-orange-500">
+          <span className="mb-5 inline-block text-sm font-black uppercase tracking-[0.35em] text-[#e71921]">
             Beneficios Jalu
           </span>
 
@@ -101,7 +101,7 @@ export default function ClubJalu() {
             Club Jalu
           </h1>
 
-          <p className="mt-5 text-2xl font-black uppercase text-orange-500 sm:text-3xl">
+          <p className="mt-5 text-2xl font-black uppercase text-[#e71921] sm:text-3xl">
             Beneficios para los que siempre vuelven
           </p>
 
@@ -113,7 +113,7 @@ export default function ClubJalu() {
           <button
             type="button"
             onClick={irARegistro}
-            className="mt-9 rounded-lg bg-orange-500 px-8 py-4 text-sm font-black uppercase tracking-wide text-white transition hover:-translate-y-1 hover:bg-orange-600"
+            className="mt-9 rounded-lg bg-[#e71921] px-8 py-4 text-sm font-black uppercase tracking-wide text-white transition hover:-translate-y-1 hover:bg-[#ff2a33]"
           >
             Quiero ser parte
           </button>
@@ -123,7 +123,7 @@ export default function ClubJalu() {
       {/* BENEFICIOS */}
       <section className="mx-auto max-w-7xl px-6 py-20">
         <div className="mb-12 text-center">
-          <span className="text-sm font-black uppercase tracking-[0.3em] text-orange-500">
+          <span className="text-sm font-black uppercase tracking-[0.3em] text-[#e71921]">
             Ser parte tiene beneficios
           </span>
 
@@ -141,9 +141,9 @@ export default function ClubJalu() {
           {beneficios.map((beneficio) => (
             <article
               key={beneficio.titulo}
-              className="rounded-2xl border border-white/10 bg-[#121212] p-8 transition duration-300 hover:-translate-y-1 hover:border-orange-500/50"
+              className="rounded-2xl border border-white/10 bg-[#121212] p-8 transition duration-300 hover:-translate-y-1 hover:border-[#e71921]/50"
             >
-              <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-full bg-orange-500/10 text-xl font-black text-orange-500">
+              <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-full bg-[#e71921]/10 text-xl font-black text-[#e71921]">
                 +
               </div>
 
@@ -162,7 +162,7 @@ export default function ClubJalu() {
       {/* 2X1 DESTACADO */}
       <section className="border-y border-white/10 bg-[#101010] px-6 py-20">
         <div className="mx-auto max-w-5xl text-center">
-          <span className="text-sm font-black uppercase tracking-[0.3em] text-orange-500">
+          <span className="text-sm font-black uppercase tracking-[0.3em] text-[#e71921]">
             Beneficio destacado
           </span>
 
@@ -185,7 +185,7 @@ export default function ClubJalu() {
       {/* CÓMO FUNCIONA */}
       <section className="mx-auto max-w-7xl px-6 py-20">
         <div className="mb-12">
-          <span className="text-sm font-black uppercase tracking-[0.3em] text-orange-500">
+          <span className="text-sm font-black uppercase tracking-[0.3em] text-[#e71921]">
             Es muy simple
           </span>
 
@@ -200,7 +200,7 @@ export default function ClubJalu() {
               key={paso.numero}
               className="border-t border-white/20 py-7"
             >
-              <span className="text-sm font-black text-orange-500">
+              <span className="text-sm font-black text-[#e71921]">
                 {paso.numero}
               </span>
 
@@ -223,7 +223,7 @@ export default function ClubJalu() {
       >
         <div className="mx-auto grid max-w-6xl gap-12 lg:grid-cols-2 lg:items-center">
           <div>
-            <span className="text-sm font-black uppercase tracking-[0.3em] text-orange-500">
+            <span className="text-sm font-black uppercase tracking-[0.3em] text-[#e71921]">
               Club Jalu
             </span>
 
@@ -264,7 +264,7 @@ export default function ClubJalu() {
                 onChange={handleChange}
                 placeholder="Tu nombre"
                 required
-                className="w-full rounded-lg border border-white/10 bg-[#0d0d0d] px-4 py-3 text-white outline-none transition focus:border-orange-500"
+                className="w-full rounded-lg border border-white/10 bg-[#0d0d0d] px-4 py-3 text-white outline-none transition focus:border-[#e71921]"
               />
             </div>
 
@@ -284,7 +284,7 @@ export default function ClubJalu() {
                 onChange={handleChange}
                 placeholder="ejemplo@gmail.com"
                 required
-                className="w-full rounded-lg border border-white/10 bg-[#0d0d0d] px-4 py-3 text-white outline-none transition focus:border-orange-500"
+                className="w-full rounded-lg border border-white/10 bg-[#0d0d0d] px-4 py-3 text-white outline-none transition focus:border-[#e71921]"
               />
             </div>
 
@@ -304,13 +304,13 @@ export default function ClubJalu() {
                 onChange={handleChange}
                 placeholder="381 000 0000"
                 required
-                className="w-full rounded-lg border border-white/10 bg-[#0d0d0d] px-4 py-3 text-white outline-none transition focus:border-orange-500"
+                className="w-full rounded-lg border border-white/10 bg-[#0d0d0d] px-4 py-3 text-white outline-none transition focus:border-[#e71921]"
               />
             </div>
 
             <button
               type="submit"
-              className="w-full rounded-lg bg-orange-500 px-6 py-4 text-sm font-black uppercase tracking-wide text-white transition hover:bg-orange-600"
+              className="w-full rounded-lg bg-[#e71921] px-6 py-4 text-sm font-black uppercase tracking-wide text-white transition hover:bg-[#ff2a33]"
             >
               Unirme al Club Jalu
             </button>
@@ -326,7 +326,7 @@ export default function ClubJalu() {
       {/* CTA FINAL */}
       <section className="px-6 py-24 text-center">
         <div className="mx-auto max-w-3xl">
-          <span className="text-sm font-black uppercase tracking-[0.3em] text-orange-500">
+          <span className="text-sm font-black uppercase tracking-[0.3em] text-[#e71921]">
             Siempre hay algo nuevo
           </span>
 
@@ -337,7 +337,7 @@ export default function ClubJalu() {
           <button
             type="button"
             onClick={irARegistro}
-            className="mt-8 rounded-lg bg-orange-500 px-9 py-4 text-sm font-black uppercase tracking-wide transition hover:-translate-y-1 hover:bg-orange-600"
+            className="mt-8 rounded-lg bg-[#e71921] px-9 py-4 text-sm font-black uppercase tracking-wide transition hover:-translate-y-1 hover:bg-[#ff2a33]"
           >
             Quiero sumarme
           </button>

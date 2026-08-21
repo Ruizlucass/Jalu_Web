@@ -85,7 +85,7 @@ export default function LoginForm({ onSuccess }) {
           onChange={handleChange}
           autoComplete="email"
           required
-          className="w-full rounded-lg border border-white/10 bg-[#1b1b1b] px-4 py-3 text-white outline-none transition focus:border-orange-500"
+          className="w-full rounded-lg border border-white/10 bg-[#1b1b1b] px-4 py-3 text-white outline-none transition focus:border-[#e71921] focus:shadow-[0_0_0_3px_rgba(231,25,33,0.16)]"
         />
       </div>
 
@@ -102,7 +102,7 @@ export default function LoginForm({ onSuccess }) {
           onChange={handleChange}
           autoComplete="current-password"
           required
-          className="w-full rounded-lg border border-white/10 bg-[#1b1b1b] px-4 py-3 text-white outline-none transition focus:border-orange-500"
+          className="w-full rounded-lg border border-white/10 bg-[#1b1b1b] px-4 py-3 text-white outline-none transition focus:border-[#e71921] focus:shadow-[0_0_0_3px_rgba(231,25,33,0.16)]"
         />
       </div>
 
@@ -115,7 +115,7 @@ export default function LoginForm({ onSuccess }) {
       <button
         type="submit"
         disabled={loading}
-        className="w-full rounded-lg bg-orange-500 py-3 font-bold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
+        className="w-full rounded-lg bg-[#e71921] py-3 font-bold text-white shadow-[0_14px_32px_rgba(231,25,33,0.28)] transition hover:bg-[#ff2a33] disabled:cursor-not-allowed disabled:opacity-50"
       >
         {loading ? "Ingresando..." : "Ingresar"}
       </button>

@@ -25,8 +25,9 @@
 
 .menu-tabs {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: 8px;
-  overflow-x: auto;
   padding-bottom: 4px;
   margin-bottom: 22px;
 }
@@ -40,6 +41,13 @@
   padding: 12px 16px;
   font-weight: 900;
   cursor: pointer;
+}
+
+@media (max-width: 639px) {
+  .tab {
+    min-height: 46px;
+    padding: 12px 17px;
+  }
 }
 
 .tab.active {
@@ -61,7 +69,7 @@
 .reserve-panel {
   background: var(--panel);
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 16px;
   overflow: hidden;
 }
 
@@ -105,7 +113,7 @@
 
 .reviews-section {
   background:
-    linear-gradient(180deg, rgba(231, 25, 33, 0.08), transparent 42%),
+    linear-gradient(180deg, rgba(231, 25, 33, 0.1), transparent 44%),
     #0b0b0b;
 }
 
@@ -120,11 +128,17 @@
   align-content: space-between;
   gap: 20px;
   padding: clamp(20px, 3vw, 28px);
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02));
+  background: linear-gradient(145deg, rgba(231, 25, 33, 0.08), rgba(255, 255, 255, 0.025));
   border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 8px;
+  border-radius: 16px;
   overflow: hidden;
   box-shadow: 0 20px 55px rgba(0, 0, 0, 0.28);
+  transition: transform 0.3s ease, border-color 0.3s ease;
+}
+
+.review-card:hover {
+  border-color: rgba(231, 25, 33, 0.5);
+  transform: translateY(-4px);
 }
 
 .review-card::before {
@@ -132,7 +146,7 @@
   position: absolute;
   inset: 0 0 auto;
   height: 4px;
-  background: linear-gradient(90deg, var(--red), #ff7a1a);
+  background: linear-gradient(90deg, var(--red), #ff2a33);
 }
 
 .review-card-top,
@@ -156,10 +170,11 @@
 }
 
 .review-tag {
-  border: 1px solid var(--line);
+  border: 1px solid rgba(231, 25, 33, 0.32);
   border-radius: 999px;
   padding: 8px 12px;
-  color: var(--muted);
+  color: #f0f0f0;
+  background: rgba(231, 25, 33, 0.08);
   font-size: 0.78rem;
   font-weight: 900;
   text-transform: uppercase;
@@ -202,6 +217,18 @@
 .reserve-panel,
 .club-panel {
   padding: clamp(20px, 4vw, 32px);
+}
+
+.order-panel,
+.reserve-panel {
+  background: #121212;
+  transition: transform 0.3s ease, border-color 0.3s ease;
+}
+
+.order-panel:hover,
+.reserve-panel:hover {
+  border-color: rgba(231, 25, 33, 0.5);
+  transform: translateY(-4px);
 }
 
 @media (min-width: 640px) {

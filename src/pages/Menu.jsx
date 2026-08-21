@@ -10,19 +10,37 @@ export default function Menu() {
   const visibleProducts = products.filter((product) => product.category === active);
 
   return (
-    <main className="app page-shell">
+    <main className="min-h-screen bg-[#080808] text-white">
       <Navbar />
 
-      <section className="section menu-page">
-        <div className="section-header">
-          <div>
-            <span className="eyebrow">Menu delivery / take away</span>
-            <h1 className="section-title">Elegi tu pedido</h1>
-          </div>
-          <p className="section-note">
+      <section className="relative flex min-h-[62vh] items-center justify-center overflow-hidden px-6 pt-24 text-center">
+        <div className="absolute inset-0 bg-gradient-to-b from-[#e71921]/12 via-transparent to-[#080808]" />
+
+        <div className="relative z-10 mx-auto max-w-4xl">
+          <span className="mb-5 inline-block text-sm font-black uppercase tracking-[0.35em] text-[#e71921]">
+            Menu delivery / take away
+          </span>
+
+          <h1 className="text-5xl font-black uppercase leading-none sm:text-6xl md:text-8xl">
+            Elegi tu pedido
+          </h1>
+
+          <p className="mx-auto mt-7 max-w-2xl text-base font-bold leading-7 text-gray-300 sm:text-lg">
             Todas las opciones de Jalu reunidas en una pagina aparte, con categorias
             claras para pedir rapido por WhatsApp.
           </p>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-6 py-16">
+        <div className="mb-10 text-center">
+          <span className="text-sm font-black uppercase tracking-[0.3em] text-[#e71921]">
+            Nuestros sabores
+          </span>
+
+          <h2 className="mt-3 text-4xl font-black uppercase md:text-5xl">
+            Categorias
+          </h2>
         </div>
 
         <div className="menu-tabs" role="tablist" aria-label="Categorias de menu">

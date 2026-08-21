@@ -25,11 +25,19 @@ export default function Navbar() {
     setAuthOpen(false);
   };
 
-  const buttonBase =
-    "inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-white/10 px-3.5 text-xs font-black uppercase tracking-normal transition duration-200 hover:-translate-y-px hover:border-white/25 hover:bg-white/10";
+  const isHome = window.location.pathname === "/";
+
+  const authButtonBase =
+    "inline-flex min-h-10 items-center justify-center gap-2 rounded-full px-4 text-[0.9rem] font-extrabold tracking-normal transition duration-200 hover:-translate-y-px";
+  const loginButton =
+    `${authButtonBase} border border-white/15 bg-white/[0.04] text-[#b9b9b9] hover:border-white/30 hover:bg-white/10 hover:text-white`;
+  const registerButton =
+    `${authButtonBase} border border-[#e71921] bg-[#e71921] text-white shadow-[0_14px_32px_rgba(231,25,33,0.28)] hover:border-[#ff2a33] hover:bg-[#ff2a33]`;
 
   const navLink =
     "transition-colors duration-200 hover:text-white";
+  const homeLink =
+    "inline-flex min-h-10 items-center justify-center rounded-full border border-[#e71921]/60 px-4 text-[#e71921] transition duration-200 hover:border-[#ff2a33] hover:bg-[#e71921] hover:text-white";
 
   const LoginIcon = () => (
     <svg
@@ -81,9 +89,15 @@ export default function Navbar() {
 
           {/* NAV DESKTOP */}
           <nav
-            className="hidden gap-5 text-[0.9rem] font-extrabold text-[#b9b9b9] min-[960px]:flex"
+            className="hidden items-center gap-5 text-[0.9rem] font-extrabold text-[#b9b9b9] min-[960px]:flex"
             aria-label="Principal"
           >
+            {!isHome && (
+              <a className={homeLink} href="/" onClick={closeMenu}>
+                Inicio
+              </a>
+            )}
+
             <a className={navLink} href="/menu">
               Menú
             </a>
@@ -108,25 +122,9 @@ export default function Navbar() {
           {/* BOTONES DESKTOP */}
           <div className="hidden gap-2 min-[960px]:flex">
 
-            <a
-              className={`${buttonBase} bg-transparent text-white`}
-              href="/reservas#pedidos"
-              onClick={() => trackEvent("click_pedir_nav")}
-            >
-              Pedir
-            </a>
-
-            <a
-              className={`${buttonBase} bg-transparent text-white`}
-              href="/reservas#reservas"
-              onClick={() => trackEvent("click_reservar_nav")}
-            >
-              Reservar
-            </a>
-
             <button
               type="button"
-              className={`${buttonBase} bg-transparent text-white`}
+              className={loginButton}
               onClick={() => {
                 trackEvent("click_login_nav");
                 openLogin();
@@ -138,7 +136,7 @@ export default function Navbar() {
 
             <button
               type="button"
-              className={`${buttonBase} bg-transparent text-white`}
+              className={registerButton}
               onClick={() => {
                 trackEvent("click_register_nav");
                 openRegister();
@@ -151,7 +149,7 @@ export default function Navbar() {
 
           {/* BOTÓN MENÚ MOBILE */}
           <button
-            className="relative z-30 grid h-10 w-10 place-items-center rounded-md border border-white/10 text-white transition hover:border-white/25 hover:bg-white/10 min-[960px]:hidden"
+            className="relative top-1 z-30 grid h-10 w-10 place-items-center rounded-md border border-white/10 text-white transition hover:border-white/25 hover:bg-white/10 min-[960px]:hidden"
             type="button"
             aria-label={
               isMenuOpen ? "Cerrar menu" : "Abrir menu"
@@ -205,6 +203,16 @@ export default function Navbar() {
             className="flex flex-col gap-5 py-5 text-lg font-extrabold text-[#b9b9b9]"
             aria-label="Principal mobile"
           >
+            {!isHome && (
+              <a
+                className={`${homeLink} w-full`}
+                href="/"
+                onClick={closeMenu}
+              >
+                Inicio
+              </a>
+            )}
+
             <a
               className={navLink}
               href="/menu"
@@ -238,7 +246,7 @@ export default function Navbar() {
             </a>
 
             <a
-              className={navLink}
+              className={`${navLink} pt-1`}
               href="/sobre-nosotros"
               onClick={closeMenu}
             >
@@ -248,31 +256,9 @@ export default function Navbar() {
 
           <div className="grid gap-2 pb-6">
 
-            <a
-              className={`${buttonBase} w-full bg-transparent text-white`}
-              href="/reservas#pedidos"
-              onClick={() => {
-                trackEvent("click_pedir_nav");
-                closeMenu();
-              }}
-            >
-              Pedir
-            </a>
-
-            <a
-              className={`${buttonBase} w-full bg-transparent text-white`}
-              href="/reservas#reservas"
-              onClick={() => {
-                trackEvent("click_reservar_nav");
-                closeMenu();
-              }}
-            >
-              Reservar
-            </a>
-
             <button
               type="button"
-              className={`${buttonBase} w-full bg-transparent text-white`}
+              className={`${loginButton} w-full`}
               onClick={() => {
                 trackEvent("click_login_nav");
                 openLogin();
@@ -284,7 +270,7 @@ export default function Navbar() {
 
             <button
               type="button"
-              className={`${buttonBase} w-full bg-transparent text-white`}
+              className={`${registerButton} w-full`}
               onClick={() => {
                 trackEvent("click_register_nav");
                 openRegister();
