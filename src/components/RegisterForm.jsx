@@ -1,11 +1,16 @@
 import { useState } from "react";
+
 import {
   createUserWithEmailAndPassword,
   updateProfile,
 } from "firebase/auth";
+
 import { auth } from "../firebase";
 
-export default function RegisterForm({ onLogin }) {
+export default function RegisterForm({
+  onLogin,
+  onSuccess,
+}) {
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -41,18 +46,25 @@ export default function RegisterForm({ onLogin }) {
     setLoading(true);
 
     try {
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        form.email,
-        form.password
-      );
+      const userCredential =
+        await createUserWithEmailAndPassword(
+          auth,
+          form.email,
+          form.password
+        );
 
       await updateProfile(userCredential.user, {
         displayName: form.name,
       });
 
-      console.log("USUARIO REGISTRADO:", userCredential.user);
+      console.log(
+        "USUARIO REGISTRADO:",
+        userCredential.user
+      );
 
+      if (onSuccess) {
+        onSuccess(userCredential.user);
+      }
     } catch (error) {
       console.error(error);
 
@@ -70,7 +82,9 @@ export default function RegisterForm({ onLogin }) {
           break;
 
         case "auth/network-request-failed":
-          setError("No se pudo conectar con Firebase. Revisá tu conexión.");
+          setError(
+            "No se pudo conectar con Firebase. Revisá tu conexión."
+          );
           break;
 
         default:
@@ -83,7 +97,6 @@ export default function RegisterForm({ onLogin }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-
       <div>
         <label className="mb-2 block text-sm font-semibold text-gray-300">
           Nombre
@@ -166,14 +179,15 @@ export default function RegisterForm({ onLogin }) {
         {loading ? "Creando cuenta..." : "Crear cuenta"}
       </button>
 
-      <button
-        type="button"
-        onClick={onLogin}
-        className="w-full text-sm text-gray-400 transition hover:text-white"
-      >
-        ¿Ya tenés una cuenta? Iniciá sesión
-      </button>
-
+      {onLogin && (
+        <button
+          type="button"
+          onClick={onLogin}
+          className="w-full text-sm text-gray-400 transition hover:text-white"
+        >
+          ¿Ya tenés una cuenta? Iniciá sesión
+        </button>
+      )}
     </form>
   );
 }

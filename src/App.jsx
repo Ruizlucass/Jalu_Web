@@ -4,10 +4,15 @@ import Reservas from "./pages/Reservas.jsx";
 import SobreNosotros from "./pages/SobreNosotros.jsx";
 import Login from "./pages/Login.jsx";
 import Register from "./pages/Register.jsx";
+import ArabeLibre from "./pages/ArabeLibre.jsx";
 
 export default function App() {
   if (window.location.pathname === "/menu") {
     return <Menu />;
+  }
+
+  if (window.location.pathname === "/arabe-libre") {
+    return <ArabeLibre />;
   }
 
   if (window.location.pathname === "/sobre-nosotros") {
