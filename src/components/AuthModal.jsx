@@ -41,7 +41,7 @@ export default function AuthModal({
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div
           onClick={(e) => e.stopPropagation()}
-          className="relative w-full max-w-md rounded-2xl border border-white/10 bg-[#121212] p-8 shadow-2xl animate-[fadeIn_.25s_ease]"
+          className="relative w-full max-w-md rounded-2xl border border-[#e71921]/25 bg-[#121212] p-8 shadow-[0_24px_70px_rgba(0,0,0,0.55),0_0_45px_rgba(231,25,33,0.14)] animate-[fadeIn_.25s_ease]"
         >
           {/* CERRAR */}
           <button
@@ -79,7 +79,7 @@ export default function AuthModal({
                 <button
                   type="button"
                   onClick={() => setMode("register")}
-                  className="ml-2 font-bold text-orange-500 transition hover:text-orange-400"
+                  className="ml-2 font-bold text-[#e71921] transition hover:text-[#ff2a33]"
                 >
                   Registrarse
                 </button>
@@ -91,7 +91,7 @@ export default function AuthModal({
                 <button
                   type="button"
                   onClick={() => setMode("login")}
-                  className="ml-2 font-bold text-orange-500 transition hover:text-orange-400"
+                  className="ml-2 font-bold text-[#e71921] transition hover:text-[#ff2a33]"
                 >
                   Iniciar sesión
                 </button>
