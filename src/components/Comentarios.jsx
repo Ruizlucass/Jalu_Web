@@ -8,9 +8,7 @@ export default function Comentarios() {
           <span className="eyebrow">Reseñas</span>
           <h2 className="section-title">Lo que mas se repite</h2>
         </div>
-        <p className="section-note">
-          Comentarios cortos, reales en tono y faciles de escanear para decidir rapido.
-        </p>
+        
       </div>
 
       <div className="review-grid">

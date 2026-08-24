@@ -1,5 +1,6 @@
 import Navbar from "../components/Navbar.jsx";
 import Hero from "../components/Hero.jsx";
+import ClubJaluHome from "../components/ClubJaluHome.jsx";
 import { Combos, QuickAccess } from "../components/Cards.jsx";
 import {
   ArabicFree,

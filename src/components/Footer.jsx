@@ -8,10 +8,10 @@ export default function Footer() {
   return (
     <footer className="w-full bg-[#080808] text-white mt-20 border-t border-white/10">
 
-      {/* Parte superior */}
+      
       <div className="w-full px-20 py-16 grid grid-cols-1 md:grid-cols-4 items-start gap-16">
 
-        {/* Logo */}
+       
         <div className="flex items-start">
           <a href="#home" aria-label="Jalu inicio">
             <img
@@ -22,7 +22,7 @@ export default function Footer() {
           </a>
         </div>
 
-        {/* Sobre Nosotros */}
+     
         <div>
           <h3 className="font-bold text-2xl mb-6">
             Sobre Nosotros
@@ -47,7 +47,7 @@ export default function Footer() {
           </ul>
         </div>
 
-        {/* Descubrí */}
+      
         <div>
           <h3 className="font-bold text-2xl mb-6">
             Descubrí
@@ -70,7 +70,7 @@ export default function Footer() {
           </ul>
         </div>
 
-        {/* Contacto */}
+        
         <div>
           <h3 className="font-bold text-2xl mb-6">
             Contacto
@@ -80,7 +80,7 @@ export default function Footer() {
             Seguinos en nuestras redes sociales
           </p>
 
-          {/* Redes */}
+          
           <div className="flex gap-5 text-3xl">
 
             <a
@@ -112,17 +112,17 @@ export default function Footer() {
 
           </div>
 
-          {/* Frase */}
+         
           <p className="mt-8 text-[#b9b9b9] text-sm leading-relaxed">
             Sabores auténticos del Medio Oriente.
           </p>
         </div>
       </div>
 
-      {/* Línea */}
+     
       <div className="border-t border-white/10 mx-20"></div>
 
-      {/* Parte inferior */}
+     
       <div className="w-full px-20 py-8 flex flex-col md:flex-row items-center justify-between gap-5 text-sm text-[#b9b9b9]">
 
         <p>

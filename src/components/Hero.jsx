@@ -21,7 +21,7 @@ export default function Hero() {
 
   return (
     <section id="home" className="hero">
-      {/* Carousel Background */}
+     
       <div className="hero-carousel">
         {images.map((image, index) => (
           <div
@@ -34,10 +34,10 @@ export default function Hero() {
         ))}
       </div>
 
-      {/* Overlay */}
+     
       <div className="hero-overlay" />
 
-      {/* Content */}
+    
       <div className="hero-inner">
         <span></span>
 

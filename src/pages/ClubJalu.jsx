@@ -88,7 +88,7 @@ export default function ClubJalu() {
     <main className="min-h-screen bg-[#080808] text-white">
       <Navbar />
 
-      {/* HERO */}
+      
       <section className="relative flex min-h-[75vh] items-center justify-center overflow-hidden px-6 pt-24 text-center">
         <div className="absolute inset-0 bg-gradient-to-b from-[#e71921]/12 via-transparent to-[#080808]" />
 
@@ -120,7 +120,7 @@ export default function ClubJalu() {
         </div>
       </section>
 
-      {/* BENEFICIOS */}
+      
       <section className="mx-auto max-w-7xl px-6 py-20">
         <div className="mb-12 text-center">
           <span className="text-sm font-black uppercase tracking-[0.3em] text-[#e71921]">
@@ -159,7 +159,7 @@ export default function ClubJalu() {
         </div>
       </section>
 
-      {/* 2X1 DESTACADO */}
+     
       <section className="border-y border-white/10 bg-[#101010] px-6 py-20">
         <div className="mx-auto max-w-5xl text-center">
           <span className="text-sm font-black uppercase tracking-[0.3em] text-[#e71921]">
@@ -182,7 +182,7 @@ export default function ClubJalu() {
         </div>
       </section>
 
-      {/* CÓMO FUNCIONA */}
+     
       <section className="mx-auto max-w-7xl px-6 py-20">
         <div className="mb-12">
           <span className="text-sm font-black uppercase tracking-[0.3em] text-[#e71921]">
@@ -216,7 +216,7 @@ export default function ClubJalu() {
         </div>
       </section>
 
-      {/* REGISTRO */}
+      
       <section
         id="registro-club"
         className="bg-[#101010] px-6 py-24"
@@ -323,7 +323,7 @@ export default function ClubJalu() {
         </div>
       </section>
 
-      {/* CTA FINAL */}
+      
       <section className="px-6 py-24 text-center">
         <div className="mx-auto max-w-3xl">
           <span className="text-sm font-black uppercase tracking-[0.3em] text-[#e71921]">

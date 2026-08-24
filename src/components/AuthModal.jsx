@@ -31,19 +31,19 @@ export default function AuthModal({
 
   return (
     <>
-      {/* FONDO */}
+     
       <div
         className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm"
         onClick={onClose}
       />
 
-      {/* MODAL */}
+      
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div
           onClick={(e) => e.stopPropagation()}
           className="relative w-full max-w-md rounded-2xl border border-[#e71921]/25 bg-[#121212] p-8 shadow-[0_24px_70px_rgba(0,0,0,0.55),0_0_45px_rgba(231,25,33,0.14)] animate-[fadeIn_.25s_ease]"
         >
-          {/* CERRAR */}
+         
           <button
             type="button"
             onClick={onClose}
@@ -53,14 +53,14 @@ export default function AuthModal({
             ×
           </button>
 
-          {/* TÍTULO */}
+         
           <h2 className="mb-6 text-center text-3xl font-black text-white">
             {mode === "login"
               ? "Iniciar sesión"
               : "Crear cuenta"}
           </h2>
 
-          {/* FORMULARIO */}
+         
           {mode === "login" ? (
             <LoginForm onSuccess={onSuccess} />
           ) : (
@@ -70,7 +70,7 @@ export default function AuthModal({
             />
           )}
 
-          {/* CAMBIAR LOGIN / REGISTRO */}
+         
           <div className="mt-6 text-center text-sm text-gray-400">
             {mode === "login" ? (
               <>

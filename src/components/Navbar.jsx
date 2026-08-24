@@ -87,7 +87,7 @@ export default function Navbar() {
             />
           </a>
 
-          {/* NAV DESKTOP */}
+          
           <nav
             className="hidden items-center gap-5 text-[0.9rem] font-extrabold text-[#b9b9b9] min-[960px]:flex"
             aria-label="Principal"
@@ -119,7 +119,7 @@ export default function Navbar() {
             </a>
           </nav>
 
-          {/* BOTONES DESKTOP */}
+          
           <div className="hidden gap-2 min-[960px]:flex">
 
             <button
@@ -147,7 +147,7 @@ export default function Navbar() {
 
           </div>
 
-          {/* BOTÓN MENÚ MOBILE */}
+          
           <button
             className="relative top-1 z-30 grid h-10 w-10 place-items-center rounded-md border border-white/10 text-white transition hover:border-white/25 hover:bg-white/10 min-[960px]:hidden"
             type="button"
@@ -189,7 +189,7 @@ export default function Navbar() {
 
         </div>
 
-        {/* MENÚ MOBILE */}
+        
         <div
           id="mobile-menu"
           className={`overflow-hidden border-t border-white/10 bg-[#080808]/95 px-4 transition-all duration-300 min-[960px]:hidden ${
@@ -283,7 +283,7 @@ export default function Navbar() {
         </div>
       </header>
 
-      {/* MODAL LOGIN / REGISTRO */}
+      
       <AuthModal
         open={authOpen}
         mode={authMode}

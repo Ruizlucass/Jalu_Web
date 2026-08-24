@@ -17,14 +17,14 @@ export default function Sucursales() {
         </div>
       </div>
 
-      {/* GRID */}
+      
       <div className="flex flex-wrap justify-center gap-8">
         {branches.map((branch) => (
           <article
             key={branch.name}
             className="w-full max-w-[450px] bg-[#111] rounded-3xl overflow-hidden shadow-xl border border-[#222]"
           >
-            {/* MAPA */}
+            
             <div className="w-full h-52">
               <iframe
                 title={branch.name}
@@ -38,7 +38,7 @@ export default function Sucursales() {
               ></iframe>
             </div>
 
-            {/* INFO */}
+          
             <div className="p-5">
               <span className="text-sm text-orange-400 font-semibold uppercase">
                 {branch.zone}
@@ -54,7 +54,7 @@ export default function Sucursales() {
                 Todos los días 12:00 a 00:00
               </p>
 
-              {/* BOTONES */}
+             
               <div className="flex gap-3 flex-wrap">
                 <Button
                   variant="outline"
