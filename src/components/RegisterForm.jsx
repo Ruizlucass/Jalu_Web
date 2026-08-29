@@ -1,11 +1,6 @@
 import { useState } from "react";
 
-import {
-  createUserWithEmailAndPassword,
-  updateProfile,
-} from "firebase/auth";
-
-import { auth } from "../firebase";
+import { supabase } from "../supabase.js";
 
 export default function RegisterForm({
   onLogin,
@@ -46,49 +41,55 @@ export default function RegisterForm({
     setLoading(true);
 
     try {
-      const userCredential =
-        await createUserWithEmailAndPassword(
-          auth,
-          form.email,
-          form.password
-        );
-
-      await updateProfile(userCredential.user, {
-        displayName: form.name,
+      const { data, error } = await supabase.auth.signUp({
+        email: form.email,
+        password: form.password,
+        options: {
+          data: {
+            name: form.name,
+          },
+        },
       });
+
+      if (error) {
+        throw error;
+      }
 
       console.log(
         "USUARIO REGISTRADO:",
-        userCredential.user
+        data.user
       );
 
       if (onSuccess) {
-        onSuccess(userCredential.user);
+        onSuccess(data.user);
       }
     } catch (error) {
       console.error(error);
 
-      switch (error.code) {
-        case "auth/email-already-in-use":
+      switch (error.message) {
+        case "User already registered":
           setError("Ya existe una cuenta con ese correo.");
           break;
 
-        case "auth/invalid-email":
+        case "Unable to validate email address: invalid format":
           setError("El correo electrónico no es válido.");
           break;
 
-        case "auth/weak-password":
+        case "Password should be at least 6 characters.":
           setError("La contraseña es demasiado débil.");
           break;
 
-        case "auth/network-request-failed":
-          setError(
-            "No se pudo conectar con Firebase. Revisá tu conexión."
-          );
-          break;
-
         default:
-          setError("Ocurrió un error al crear la cuenta.");
+          if (
+            error.message?.toLowerCase().includes("fetch") ||
+            error.message?.toLowerCase().includes("network")
+          ) {
+            setError(
+              "No se pudo conectar con el servicio de autenticación. Revisá tu conexión."
+            );
+          } else {
+            setError("Ocurrió un error al crear la cuenta.");
+          }
       }
     } finally {
       setLoading(false);
@@ -190,4 +191,4 @@ export default function RegisterForm({
       )}
     </form>
   );
-}
+} 
