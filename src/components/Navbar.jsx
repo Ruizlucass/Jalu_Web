@@ -157,9 +157,19 @@ export default function Navbar() {
               Árabe libre
             </a>
 
-            <a className={navLink} href="/reservas">
-              Pedidos y reservas
-            </a>
+           <a
+          href="/pedidos"
+           className="transition hover:text-[#e71921]"
+           >    
+           Pedidos
+           </a>
+
+           <a
+             href="/reservas"
+             className="transition hover:text-[#e71921]"
+           >
+             Reservas
+           </a>
 
             <a className={navLink} href="/club-jalu">
               Club Jalu

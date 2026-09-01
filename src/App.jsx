@@ -1,11 +1,13 @@
 import Home from "./pages/Home.jsx";
 import Menu from "./pages/Menu.jsx";
+import Pedidos from "./pages/Pedidos.jsx";
 import Reservas from "./pages/Reservas.jsx";
 import SobreNosotros from "./pages/SobreNosotros.jsx";
 import Login from "./pages/Login.jsx";
 import Register from "./pages/Register.jsx";
 import ArabeLibre from "./pages/ArabeLibre.jsx";
 import ClubJalu from "./pages/ClubJalu.jsx";
+
 import AdminLayout from "./admin/AdminLayout.jsx";
 import Dashboard from "./admin/pages/Dashboard.jsx";
 import MenuProducts from "./admin/pages/MenuProducts.jsx";
@@ -18,31 +20,43 @@ import Unavailable from "./admin/pages/Unavailable.jsx";
 import AdminProtected from "./admin/AdminProtected.jsx";
 
 export default function App() {
-  const pathname = window.location.pathname.replace(/\/$/, "") || "/";
+  const pathname =
+    window.location.pathname.replace(/\/$/, "") || "/";
 
-if (pathname.startsWith("/superadmin")) {
-  const page = getPanelPage(pathname, "superadmin");
+  // =========================
+  // SUPERADMIN
+  // =========================
+  if (pathname.startsWith("/superadmin")) {
+    const page = getPanelPage(pathname, "superadmin");
 
-  return (
-    <AdminProtected allowedRoles={["superadmin"]}>
-      <AdminLayout panelType="superadmin">
-        {page}
-      </AdminLayout>
-    </AdminProtected>
-  );
-}
+    return (
+      <AdminProtected allowedRoles={["superadmin"]}>
+        <AdminLayout panelType="superadmin">
+          {page}
+        </AdminLayout>
+      </AdminProtected>
+    );
+  }
 
-if (pathname.startsWith("/admin")) {
-  const page = getPanelPage(pathname, "admin");
+  // =========================
+  // ADMIN
+  // =========================
+  if (pathname.startsWith("/admin")) {
+    const page = getPanelPage(pathname, "admin");
 
-  return (
-    <AdminProtected allowedRoles={["admin", "superadmin"]}>
-      <AdminLayout panelType="admin">
-        {page}
-      </AdminLayout>
-    </AdminProtected>
-  );
-}
+    return (
+      <AdminProtected allowedRoles={["admin", "superadmin"]}>
+        <AdminLayout panelType="admin">
+          {page}
+        </AdminLayout>
+      </AdminProtected>
+    );
+  }
+
+  // =========================
+  // PÁGINAS PÚBLICAS
+  // =========================
+
   if (pathname === "/menu") {
     return <Menu />;
   }
@@ -55,12 +69,16 @@ if (pathname.startsWith("/admin")) {
     return <ClubJalu />;
   }
 
-  if (pathname === "/sobre-nosotros") {
-    return <SobreNosotros />;
+  if (pathname === "/pedidos") {
+    return <Pedidos />;
   }
 
   if (pathname === "/reservas") {
     return <Reservas />;
+  }
+
+  if (pathname === "/sobre-nosotros") {
+    return <SobreNosotros />;
   }
 
   if (pathname === "/login") {
@@ -71,12 +89,21 @@ if (pathname.startsWith("/admin")) {
     return <Register />;
   }
 
+  // HOME
   return <Home />;
 }
 
 function getPanelPage(pathname, panelType) {
-  const basePath = panelType === "superadmin" ? "/superadmin" : "/admin";
-  const section = pathname.slice(basePath.length).replace(/^\//, "") || "dashboard";
+  const basePath =
+    panelType === "superadmin"
+      ? "/superadmin"
+      : "/admin";
+
+  const section =
+    pathname
+      .slice(basePath.length)
+      .replace(/^\//, "") || "dashboard";
+
   const pageProps = { panelType };
 
   if (section === "dashboard") {
@@ -99,11 +126,17 @@ function getPanelPage(pathname, panelType) {
     return <Orders {...pageProps} />;
   }
 
-  if (panelType === "superadmin" && section === "usuarios") {
+  if (
+    panelType === "superadmin" &&
+    section === "usuarios"
+  ) {
     return <Users />;
   }
 
-  if (panelType === "superadmin" && section === "roles") {
+  if (
+    panelType === "superadmin" &&
+    section === "roles"
+  ) {
     return <Roles />;
   }
 
