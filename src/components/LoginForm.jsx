@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../firebase";
+import { supabase } from "../supabase.js";
 
 export default function LoginForm({ onSuccess }) {
   const [form, setForm] = useState({
@@ -25,45 +24,47 @@ export default function LoginForm({ onSuccess }) {
     setLoading(true);
 
     try {
-      const userCredential = await signInWithEmailAndPassword(
-        auth,
-        form.email,
-        form.password
-      );
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: form.email,
+        password: form.password,
+      });
 
-      console.log("USUARIO LOGUEADO:", userCredential.user);
+      if (error) {
+        throw error;
+      }
+
+      console.log("USUARIO LOGUEADO:", data.user);
 
       if (onSuccess) {
-        onSuccess(userCredential.user);
+        onSuccess(data.user);
       }
     } catch (error) {
       console.error(error);
 
-      switch (error.code) {
-        case "auth/invalid-credential":
+      switch (error.message) {
+        case "Invalid login credentials":
           setError("El correo o la contraseña son incorrectos.");
           break;
 
-        case "auth/user-not-found":
-          setError("No existe una cuenta con ese correo.");
+        case "Email not confirmed":
+          setError("Primero tenés que confirmar tu correo electrónico.");
           break;
 
-        case "auth/wrong-password":
-          setError("La contraseña es incorrecta.");
-          break;
-
-        case "auth/invalid-email":
+        case "Invalid email":
           setError("El correo electrónico no es válido.");
           break;
 
-        case "auth/network-request-failed":
-          setError(
-            "No se pudo conectar con Firebase. Revisá tu conexión."
-          );
-          break;
-
         default:
-          setError("Ocurrió un error al iniciar sesión.");
+          if (
+            error.message?.toLowerCase().includes("fetch") ||
+            error.message?.toLowerCase().includes("network")
+          ) {
+            setError(
+              "No se pudo conectar con el servicio de autenticación. Revisá tu conexión."
+            );
+          } else {
+            setError("Ocurrió un error al iniciar sesión.");
+          }
       }
     } finally {
       setLoading(false);

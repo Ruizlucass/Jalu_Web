@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { auth } from "../firebase.js";
+import { supabase } from "../supabase.js";
 
 import Navbar from "../components/Navbar.jsx";
 import Footer from "../components/Footer.jsx";
@@ -14,8 +14,12 @@ export default function ArabeLibre() {
     window.location.href = "/reservas#reservas";
   };
 
-  const handleReservar = () => {
-    if (auth.currentUser) {
+  const handleReservar = async () => {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (session?.user) {
       irAReserva();
       return;
     }

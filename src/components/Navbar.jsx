@@ -1,11 +1,38 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { trackEvent } from "../helpers/tracking.js";
 import AuthModal from "./AuthModal.jsx";
+import { supabase } from "../supabase.js";
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
   const [authMode, setAuthMode] = useState("login");
+
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const obtenerSesion = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      setUser(session?.user ?? null);
+    };
+
+    obtenerSesion();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setUser(session?.user ?? null);
+      }
+    );
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
   const closeMenu = () => setIsMenuOpen(false);
 
@@ -25,17 +52,37 @@ export default function Navbar() {
     setAuthOpen(false);
   };
 
+  const handleAuthSuccess = (loggedUser) => {
+    setUser(loggedUser);
+    setAuthOpen(false);
+  };
+
+  const handleLogout = async () => {
+    const { error } = await supabase.auth.signOut();
+
+    if (error) {
+      console.error("Error al cerrar sesión:", error);
+      return;
+    }
+
+    setUser(null);
+    closeMenu();
+  };
+
   const isHome = window.location.pathname === "/";
 
   const authButtonBase =
     "inline-flex min-h-10 items-center justify-center gap-2 rounded-full px-4 text-[0.9rem] font-extrabold tracking-normal transition duration-200 hover:-translate-y-px";
+
   const loginButton =
     `${authButtonBase} border border-white/15 bg-white/[0.04] text-[#b9b9b9] hover:border-white/30 hover:bg-white/10 hover:text-white`;
+
   const registerButton =
     `${authButtonBase} border border-[#e71921] bg-[#e71921] text-white shadow-[0_14px_32px_rgba(231,25,33,0.28)] hover:border-[#ff2a33] hover:bg-[#ff2a33]`;
 
   const navLink =
     "transition-colors duration-200 hover:text-white";
+
   const homeLink =
     "inline-flex min-h-10 items-center justify-center rounded-full border border-[#e71921]/60 px-4 text-[#e71921] transition duration-200 hover:border-[#ff2a33] hover:bg-[#e71921] hover:text-white";
 
@@ -93,7 +140,11 @@ export default function Navbar() {
             aria-label="Principal"
           >
             {!isHome && (
-              <a className={homeLink} href="/" onClick={closeMenu}>
+              <a
+                className={homeLink}
+                href="/"
+                onClick={closeMenu}
+              >
                 Inicio
               </a>
             )}
@@ -103,7 +154,7 @@ export default function Navbar() {
             </a>
 
             <a className={navLink} href="/arabe-libre">
-             Árabe libre
+              Árabe libre
             </a>
 
             <a className={navLink} href="/reservas">
@@ -122,28 +173,40 @@ export default function Navbar() {
           
           <div className="hidden gap-2 min-[960px]:flex">
 
-            <button
-              type="button"
-              className={loginButton}
-              onClick={() => {
-                trackEvent("click_login_nav");
-                openLogin();
-              }}
-            >
-              <LoginIcon />
-              Iniciar sesión
-            </button>
+            {user ? (
+              <button
+                type="button"
+                className={loginButton}
+                onClick={handleLogout}
+              >
+                Cerrar sesión
+              </button>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  className={loginButton}
+                  onClick={() => {
+                    trackEvent("click_login_nav");
+                    openLogin();
+                  }}
+                >
+                  <LoginIcon />
+                  Iniciar sesión
+                </button>
 
-            <button
-              type="button"
-              className={registerButton}
-              onClick={() => {
-                trackEvent("click_register_nav");
-                openRegister();
-              }}
-            >
-              Registrarse
-            </button>
+                <button
+                  type="button"
+                  className={registerButton}
+                  onClick={() => {
+                    trackEvent("click_register_nav");
+                    openRegister();
+                  }}
+                >
+                  Registrarse
+                </button>
+              </>
+            )}
 
           </div>
 
@@ -222,11 +285,11 @@ export default function Navbar() {
             </a>
 
             <a
-            className={navLink}
-            href="/arabe-libre"
-            onClick={closeMenu}
+              className={navLink}
+              href="/arabe-libre"
+              onClick={closeMenu}
             >
-            Árabe libre
+              Árabe libre
             </a>
 
             <a
@@ -256,28 +319,40 @@ export default function Navbar() {
 
           <div className="grid gap-2 pb-6">
 
-            <button
-              type="button"
-              className={`${loginButton} w-full`}
-              onClick={() => {
-                trackEvent("click_login_nav");
-                openLogin();
-              }}
-            >
-              <LoginIcon />
-              Iniciar sesión
-            </button>
+            {user ? (
+              <button
+                type="button"
+                className={`${loginButton} w-full`}
+                onClick={handleLogout}
+              >
+                Cerrar sesión
+              </button>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  className={`${loginButton} w-full`}
+                  onClick={() => {
+                    trackEvent("click_login_nav");
+                    openLogin();
+                  }}
+                >
+                  <LoginIcon />
+                  Iniciar sesión
+                </button>
 
-            <button
-              type="button"
-              className={`${registerButton} w-full`}
-              onClick={() => {
-                trackEvent("click_register_nav");
-                openRegister();
-              }}
-            >
-              Registrarse
-            </button>
+                <button
+                  type="button"
+                  className={`${registerButton} w-full`}
+                  onClick={() => {
+                    trackEvent("click_register_nav");
+                    openRegister();
+                  }}
+                >
+                  Registrarse
+                </button>
+              </>
+            )}
 
           </div>
         </div>
@@ -289,6 +364,7 @@ export default function Navbar() {
         mode={authMode}
         setMode={setAuthMode}
         onClose={closeAuth}
+        onSuccess={handleAuthSuccess}
       />
     </>
   );
