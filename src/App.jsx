@@ -15,30 +15,34 @@ import Orders from "./admin/pages/Orders.jsx";
 import Users from "./admin/pages/Users.jsx";
 import Roles from "./admin/pages/Roles.jsx";
 import Unavailable from "./admin/pages/Unavailable.jsx";
+import AdminProtected from "./admin/AdminProtected.jsx";
 
 export default function App() {
   const pathname = window.location.pathname.replace(/\/$/, "") || "/";
 
-  if (pathname.startsWith("/superadmin")) {
-    const page = getPanelPage(pathname, "superadmin");
+if (pathname.startsWith("/superadmin")) {
+  const page = getPanelPage(pathname, "superadmin");
 
-    return (
+  return (
+    <AdminProtected allowedRoles={["superadmin"]}>
       <AdminLayout panelType="superadmin">
         {page}
       </AdminLayout>
-    );
-  }
+    </AdminProtected>
+  );
+}
 
-  if (pathname.startsWith("/admin")) {
-    const page = getPanelPage(pathname, "admin");
+if (pathname.startsWith("/admin")) {
+  const page = getPanelPage(pathname, "admin");
 
-    return (
+  return (
+    <AdminProtected allowedRoles={["admin", "superadmin"]}>
       <AdminLayout panelType="admin">
         {page}
       </AdminLayout>
-    );
-  }
-
+    </AdminProtected>
+  );
+}
   if (pathname === "/menu") {
     return <Menu />;
   }

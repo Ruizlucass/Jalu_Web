@@ -80,16 +80,9 @@ export default function RegisterForm({
           break;
 
         default:
-          if (
-            error.message?.toLowerCase().includes("fetch") ||
-            error.message?.toLowerCase().includes("network")
-          ) {
-            setError(
-              "No se pudo conectar con el servicio de autenticación. Revisá tu conexión."
-            );
-          } else {
-            setError("Ocurrió un error al crear la cuenta.");
-          }
+          setError(
+            error.message || "Ocurrió un error al crear la cuenta."
+          );
       }
     } finally {
       setLoading(false);
@@ -191,4 +184,4 @@ export default function RegisterForm({
       )}
     </form>
   );
-} 
+}
