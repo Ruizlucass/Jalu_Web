@@ -14,6 +14,7 @@ import MenuProducts from "./admin/pages/MenuProducts.jsx";
 import Promotions from "./admin/pages/Promotions.jsx";
 import Reservations from "./admin/pages/Reservations.jsx";
 import Orders from "./admin/pages/Orders.jsx";
+import Completed from "./admin/pages/Completed.jsx";
 import Users from "./admin/pages/Users.jsx";
 import Roles from "./admin/pages/Roles.jsx";
 import Unavailable from "./admin/pages/Unavailable.jsx";
@@ -124,6 +125,10 @@ function getPanelPage(pathname, panelType) {
 
   if (section === "pedidos") {
     return <Orders {...pageProps} />;
+  }
+
+  if (section === "finalizados") {
+    return <Completed {...pageProps} />;
   }
 
   if (

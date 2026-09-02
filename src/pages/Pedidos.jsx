@@ -21,6 +21,7 @@ export default function Pedidos() {
     sucursal: "",
     tipo_entrega: "retiro",
     direccion: "",
+    descripcion: "",
     observaciones: "",
   });
 
@@ -77,7 +78,8 @@ export default function Pedidos() {
     if (
       !form.nombre ||
       !form.telefono ||
-      !form.sucursal
+      !form.sucursal ||
+      !form.descripcion.trim()
     ) {
       setError("Completá todos los campos obligatorios.");
       return;
@@ -113,6 +115,8 @@ export default function Pedidos() {
             ? form.direccion
             : null,
 
+        descripcion: form.descripcion.trim(),
+
         observaciones:
           form.observaciones || null,
 
@@ -146,6 +150,7 @@ export default function Pedidos() {
       sucursal: "",
       tipo_entrega: "retiro",
       direccion: "",
+      descripcion: "",
       observaciones: "",
     });
   }
@@ -476,6 +481,27 @@ export default function Pedidos() {
                     />
                   </div>
                 )}
+
+                {/* DESCRIPCIÓN DEL PEDIDO */}
+                <div>
+                  <label className="mb-2 block text-sm font-semibold text-gray-300">
+                    Descripción del pedido
+                  </label>
+
+                  <textarea
+                    name="descripcion"
+                    value={form.descripcion}
+                    onChange={handleChange}
+                    rows="4"
+                    required
+                    placeholder="Ej: 2 shawarmas completos, 6 sfijas y una gaseosa..."
+                    className="w-full resize-none rounded-xl border border-white/10 bg-[#090909] px-4 py-3.5 outline-none transition focus:border-[#e71921]"
+                  />
+
+                  <p className="mt-2 text-xs leading-5 text-gray-500">
+                    Escribí qué productos querés pedir. Este detalle se verá completo en el panel.
+                  </p>
+                </div>
 
                 {/* OBSERVACIONES */}
                 <div>

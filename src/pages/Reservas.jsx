@@ -1,19 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import AuthModal from "../components/AuthModal";
 import { supabase } from "../supabase";
-
-function fechaActual() {
-  const ahora = new Date();
-  const offset = ahora.getTimezoneOffset();
-
-  return new Date(
-    ahora.getTime() - offset * 60 * 1000
-  )
-    .toISOString()
-    .split("T")[0];
-}
+import {
+  getAvailableReservationTimes,
+  getScheduleDescription,
+  getTodayInTucuman,
+  validateReservationDateTime,
+} from "../config/businessHours.js";
 
 export default function Reservas() {
   const [session, setSession] = useState(null);
@@ -35,6 +30,11 @@ export default function Reservas() {
     hora: "",
     comentarios: "",
   });
+
+  const availableTimes = useMemo(
+    () => getAvailableReservationTimes(form.sucursal, form.fecha),
+    [form.sucursal, form.fecha]
+  );
 
   useEffect(() => {
     cargarSesion();
@@ -77,7 +77,11 @@ export default function Reservas() {
     setForm((actual) => ({
       ...actual,
       [name]: value,
+      ...((name === "sucursal" || name === "fecha") && { hora: "" }),
     }));
+
+    setError("");
+    setMensaje("");
   }
 
   function abrirLogin() {
@@ -123,10 +127,14 @@ export default function Reservas() {
       return;
     }
 
-    if (form.fecha < fechaActual()) {
-      setError(
-        "No podés seleccionar una fecha anterior a hoy."
-      );
+    const dateTimeError = validateReservationDateTime({
+      branch: form.sucursal,
+      date: form.fecha,
+      time: form.hora,
+    });
+
+    if (dateTimeError) {
+      setError(dateTimeError);
       return;
     }
 
@@ -412,9 +420,10 @@ export default function Reservas() {
                   <input
                     type="date"
                     name="fecha"
-                    min={fechaActual()}
+                    min={getTodayInTucuman()}
                     value={form.fecha}
                     onChange={handleChange}
+                    required
                     className="w-full rounded-xl border border-white/10 bg-[#090909] px-4 py-3.5 text-white outline-none transition focus:border-[#e71921]"
                   />
                 </div>
@@ -424,13 +433,34 @@ export default function Reservas() {
                     Hora
                   </label>
 
-                  <input
-                    type="time"
+                  <select
                     name="hora"
                     value={form.hora}
                     onChange={handleChange}
+                    required
+                    disabled={!form.sucursal || !form.fecha || availableTimes.length === 0}
                     className="w-full rounded-xl border border-white/10 bg-[#090909] px-4 py-3.5 text-white outline-none transition focus:border-[#e71921]"
-                  />
+                  >
+                    <option value="">
+                      {!form.sucursal || !form.fecha
+                        ? "Elegí sucursal y fecha"
+                        : availableTimes.length === 0
+                          ? "No hay horarios disponibles"
+                          : "Seleccionar horario"}
+                    </option>
+
+                    {availableTimes.map((time) => (
+                      <option key={time} value={time}>
+                        {time}
+                      </option>
+                    ))}
+                  </select>
+
+                  {form.sucursal && form.fecha && (
+                    <p className="mt-2 text-xs font-semibold leading-5 text-gray-500">
+                      Horarios de atención: {getScheduleDescription(form.sucursal, form.fecha)}.
+                    </p>
+                  )}
                 </div>
               </div>
 
