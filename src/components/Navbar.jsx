@@ -82,15 +82,21 @@ export default function Navbar() {
 
   const handleAuthSuccess = async (loggedUser) => {
     setUser(loggedUser);
-    setUserRole(await getUserRole(loggedUser?.id));
+    setUserRole(
+      await getUserRole(loggedUser?.id)
+    );
     setAuthOpen(false);
   };
 
   const handleLogout = async () => {
-    const { error } = await supabase.auth.signOut();
+    const { error } =
+      await supabase.auth.signOut();
 
     if (error) {
-      console.error("Error al cerrar sesión:", error);
+      console.error(
+        "Error al cerrar sesión:",
+        error
+      );
       return;
     }
 
@@ -99,9 +105,14 @@ export default function Navbar() {
     closeMenu();
   };
 
-  const isHome = window.location.pathname === "/";
-  const userInitials = getUserInitials(user);
-  const adminPath = getAdminPathForRole(userRole);
+  const isHome =
+    window.location.pathname === "/";
+
+  const userInitials =
+    getUserInitials(user);
+
+  const adminPath =
+    getAdminPathForRole(userRole);
 
   const authButtonBase =
     "inline-flex min-h-10 items-center justify-center gap-2 rounded-full px-4 text-[0.9rem] font-extrabold tracking-normal transition duration-200 hover:-translate-y-px";
@@ -114,6 +125,10 @@ export default function Navbar() {
 
   const adminButton =
     `${authButtonBase} border border-[#e71921]/70 bg-[#e71921]/10 text-white hover:border-[#ff2a33] hover:bg-[#e71921]`;
+
+  // BOTÓN MIS SOLICITUDES
+  const requestsButton =
+    `${authButtonBase} border border-white/15 bg-white/[0.04] text-white hover:border-[#e71921] hover:bg-[#e71921]/10`;
 
   const initialsBadge =
     "grid h-10 w-10 shrink-0 place-items-center rounded-full border border-[#e71921]/60 bg-[#e71921] text-sm font-black text-white shadow-[0_12px_28px_rgba(231,25,33,0.28)]";
@@ -137,6 +152,7 @@ export default function Navbar() {
         strokeWidth="2"
         strokeLinecap="round"
       />
+
       <path
         d="M10 17l5-5-5-5"
         stroke="currentColor"
@@ -144,6 +160,7 @@ export default function Navbar() {
         strokeLinecap="round"
         strokeLinejoin="round"
       />
+
       <path
         d="M15 12H3"
         stroke="currentColor"
@@ -172,7 +189,7 @@ export default function Navbar() {
             />
           </a>
 
-          
+          {/* NAVEGACIÓN DESKTOP */}
           <nav
             className="hidden items-center gap-5 text-[0.9rem] font-extrabold text-[#b9b9b9] min-[960px]:flex"
             aria-label="Principal"
@@ -187,40 +204,51 @@ export default function Navbar() {
               </a>
             )}
 
-            <a className={navLink} href="/menu">
+            <a
+              className={navLink}
+              href="/menu"
+            >
               Menú
             </a>
 
-            <a className={navLink} href="/arabe-libre">
+            <a
+              className={navLink}
+              href="/arabe-libre"
+            >
               Árabe libre
             </a>
 
-           <a
-          href="/pedidos"
-           className="transition hover:text-[#e71921]"
-           >    
-           Pedidos
-           </a>
+            <a
+              href="/pedidos"
+              className="transition hover:text-[#e71921]"
+            >
+              Pedidos
+            </a>
 
-           <a
-             href="/reservas"
-             className="transition hover:text-[#e71921]"
-           >
-             Reservas
-           </a>
+            <a
+              href="/reservas"
+              className="transition hover:text-[#e71921]"
+            >
+              Reservas
+            </a>
 
-            <a className={navLink} href="/club-jalu">
+            <a
+              className={navLink}
+              href="/club-jalu"
+            >
               Club Jalu
             </a>
 
-            <a className={navLink} href="/sobre-nosotros">
+            <a
+              className={navLink}
+              href="/sobre-nosotros"
+            >
               Sobre nosotros
             </a>
           </nav>
 
-          
+          {/* USUARIO DESKTOP */}
           <div className="hidden gap-2 min-[960px]:flex">
-
             {user ? (
               <>
                 <span
@@ -231,6 +259,16 @@ export default function Navbar() {
                   {userInitials}
                 </span>
 
+                {/* MIS SOLICITUDES */}
+                <a
+                  className={requestsButton}
+                  href="/mis-solicitudes"
+                  onClick={closeMenu}
+                >
+                  Mis solicitudes
+                </a>
+
+                {/* PANEL ADMIN / SUPERADMIN */}
                 {adminPath && (
                   <a
                     className={adminButton}
@@ -255,7 +293,9 @@ export default function Navbar() {
                   type="button"
                   className={loginButton}
                   onClick={() => {
-                    trackEvent("click_login_nav");
+                    trackEvent(
+                      "click_login_nav"
+                    );
                     openLogin();
                   }}
                 >
@@ -267,7 +307,9 @@ export default function Navbar() {
                   type="button"
                   className={registerButton}
                   onClick={() => {
-                    trackEvent("click_register_nav");
+                    trackEvent(
+                      "click_register_nav"
+                    );
                     openRegister();
                   }}
                 >
@@ -275,9 +317,9 @@ export default function Navbar() {
                 </button>
               </>
             )}
-
           </div>
 
+          {/* MOBILE HEADER */}
           <div className="ml-auto flex items-center gap-3 min-[960px]:hidden">
             {user && (
               <span
@@ -293,12 +335,16 @@ export default function Navbar() {
               className="relative top-1 z-30 grid h-10 w-10 place-items-center rounded-md border border-white/10 text-white transition hover:border-white/25 hover:bg-white/10"
               type="button"
               aria-label={
-                isMenuOpen ? "Cerrar menu" : "Abrir menu"
+                isMenuOpen
+                  ? "Cerrar menu"
+                  : "Abrir menu"
               }
               aria-expanded={isMenuOpen}
               aria-controls="mobile-menu"
               onClick={() =>
-                setIsMenuOpen((current) => !current)
+                setIsMenuOpen(
+                  (current) => !current
+                )
               }
             >
               <span className="relative h-5 w-6">
@@ -313,7 +359,9 @@ export default function Navbar() {
 
                 <span
                   className={`absolute left-0 top-[9px] h-0.5 w-6 rounded-full bg-current transition duration-300 ${
-                    isMenuOpen ? "opacity-0" : ""
+                    isMenuOpen
+                      ? "opacity-0"
+                      : ""
                   }`}
                 />
 
@@ -328,19 +376,17 @@ export default function Navbar() {
               </span>
             </button>
           </div>
-
         </div>
 
-        
+        {/* MENÚ MOBILE */}
         <div
           id="mobile-menu"
           className={`overflow-hidden border-t border-white/10 bg-[#080808]/95 px-4 transition-all duration-300 min-[960px]:hidden ${
             isMenuOpen
-              ? "max-h-[560px] opacity-100"
+              ? "max-h-[650px] opacity-100"
               : "max-h-0 opacity-0"
           }`}
         >
-
           <nav
             className="flex flex-col gap-5 py-5 text-lg font-extrabold text-[#b9b9b9]"
             aria-label="Principal mobile"
@@ -404,8 +450,8 @@ export default function Navbar() {
             </a>
           </nav>
 
+          {/* USUARIO MOBILE */}
           <div className="grid gap-2 pb-6">
-
             {user ? (
               <>
                 <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.04] p-3">
@@ -422,6 +468,16 @@ export default function Navbar() {
                   </span>
                 </div>
 
+                {/* MIS SOLICITUDES MOBILE */}
+                <a
+                  className={`${requestsButton} w-full`}
+                  href="/mis-solicitudes"
+                  onClick={closeMenu}
+                >
+                  Mis solicitudes
+                </a>
+
+                {/* PANEL MOBILE */}
                 {adminPath && (
                   <a
                     className={`${adminButton} w-full`}
@@ -446,7 +502,9 @@ export default function Navbar() {
                   type="button"
                   className={`${loginButton} w-full`}
                   onClick={() => {
-                    trackEvent("click_login_nav");
+                    trackEvent(
+                      "click_login_nav"
+                    );
                     openLogin();
                   }}
                 >
@@ -458,7 +516,9 @@ export default function Navbar() {
                   type="button"
                   className={`${registerButton} w-full`}
                   onClick={() => {
-                    trackEvent("click_register_nav");
+                    trackEvent(
+                      "click_register_nav"
+                    );
                     openRegister();
                   }}
                 >
@@ -466,12 +526,10 @@ export default function Navbar() {
                 </button>
               </>
             )}
-
           </div>
         </div>
       </header>
 
-      
       <AuthModal
         open={authOpen}
         mode={authMode}

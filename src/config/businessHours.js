@@ -2,9 +2,7 @@ const TUCUMAN_TIME_ZONE = "America/Argentina/Tucuman";
 
 export const RESERVATION_SLOT_MINUTES = 30;
 
-// Horario provisional. Cada número representa un día:
-// 0 domingo, 1 lunes, ..., 6 sábado.
-// Para cambiar los horarios, editá solamente este objeto.
+
 const GENERAL_SCHEDULE = {
   0: [
     ["11:30", "15:00"],
