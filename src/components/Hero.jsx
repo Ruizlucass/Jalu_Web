@@ -50,7 +50,7 @@ export default function Hero() {
 
         <div className="hero-actions">
           <Button
-            href="/reservas#pedidos"
+            href="/pedidos"
             onClick={() => trackEvent("click_pedir_hero")}
           >
             Pedir ahora
@@ -58,7 +58,7 @@ export default function Hero() {
 
           <Button
             variant="dark"
-            href="/reservas#reservas"
+            href="/reservas"
             onClick={() => trackEvent("click_reservar_hero")}
           >
             Reservar mesa

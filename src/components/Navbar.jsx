@@ -2,6 +2,11 @@ import { useEffect, useState } from "react";
 import { trackEvent } from "../helpers/tracking.js";
 import AuthModal from "./AuthModal.jsx";
 import { supabase } from "../supabase.js";
+import {
+  getAdminPathForRole,
+  getUserInitials,
+  getUserRole,
+} from "../utils/authProfile.js";
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -9,14 +14,36 @@ export default function Navbar() {
   const [authMode, setAuthMode] = useState("login");
 
   const [user, setUser] = useState(null);
+  const [userRole, setUserRole] = useState(null);
 
   useEffect(() => {
+    let mounted = true;
+
+    const aplicarUsuario = async (sessionUser) => {
+      if (!mounted) {
+        return;
+      }
+
+      setUser(sessionUser ?? null);
+
+      if (!sessionUser) {
+        setUserRole(null);
+        return;
+      }
+
+      const role = await getUserRole(sessionUser.id);
+
+      if (mounted) {
+        setUserRole(role);
+      }
+    };
+
     const obtenerSesion = async () => {
       const {
         data: { session },
       } = await supabase.auth.getSession();
 
-      setUser(session?.user ?? null);
+      aplicarUsuario(session?.user ?? null);
     };
 
     obtenerSesion();
@@ -25,11 +52,12 @@ export default function Navbar() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(
       (_event, session) => {
-        setUser(session?.user ?? null);
+        aplicarUsuario(session?.user ?? null);
       }
     );
 
     return () => {
+      mounted = false;
       subscription.unsubscribe();
     };
   }, []);
@@ -52,8 +80,9 @@ export default function Navbar() {
     setAuthOpen(false);
   };
 
-  const handleAuthSuccess = (loggedUser) => {
+  const handleAuthSuccess = async (loggedUser) => {
     setUser(loggedUser);
+    setUserRole(await getUserRole(loggedUser?.id));
     setAuthOpen(false);
   };
 
@@ -66,10 +95,13 @@ export default function Navbar() {
     }
 
     setUser(null);
+    setUserRole(null);
     closeMenu();
   };
 
   const isHome = window.location.pathname === "/";
+  const userInitials = getUserInitials(user);
+  const adminPath = getAdminPathForRole(userRole);
 
   const authButtonBase =
     "inline-flex min-h-10 items-center justify-center gap-2 rounded-full px-4 text-[0.9rem] font-extrabold tracking-normal transition duration-200 hover:-translate-y-px";
@@ -79,6 +111,12 @@ export default function Navbar() {
 
   const registerButton =
     `${authButtonBase} border border-[#e71921] bg-[#e71921] text-white shadow-[0_14px_32px_rgba(231,25,33,0.28)] hover:border-[#ff2a33] hover:bg-[#ff2a33]`;
+
+  const adminButton =
+    `${authButtonBase} border border-[#e71921]/70 bg-[#e71921]/10 text-white hover:border-[#ff2a33] hover:bg-[#e71921]`;
+
+  const initialsBadge =
+    "grid h-10 w-10 shrink-0 place-items-center rounded-full border border-[#e71921]/60 bg-[#e71921] text-sm font-black text-white shadow-[0_12px_28px_rgba(231,25,33,0.28)]";
 
   const navLink =
     "transition-colors duration-200 hover:text-white";
@@ -157,9 +195,19 @@ export default function Navbar() {
               Árabe libre
             </a>
 
-            <a className={navLink} href="/reservas">
-              Pedidos y reservas
-            </a>
+           <a
+          href="/pedidos"
+           className="transition hover:text-[#e71921]"
+           >    
+           Pedidos
+           </a>
+
+           <a
+             href="/reservas"
+             className="transition hover:text-[#e71921]"
+           >
+             Reservas
+           </a>
 
             <a className={navLink} href="/club-jalu">
               Club Jalu
@@ -174,13 +222,33 @@ export default function Navbar() {
           <div className="hidden gap-2 min-[960px]:flex">
 
             {user ? (
-              <button
-                type="button"
-                className={loginButton}
-                onClick={handleLogout}
-              >
-                Cerrar sesión
-              </button>
+              <>
+                <span
+                  className={initialsBadge}
+                  aria-label="Usuario activo"
+                  title={user.email}
+                >
+                  {userInitials}
+                </span>
+
+                {adminPath && (
+                  <a
+                    className={adminButton}
+                    href={adminPath}
+                    onClick={closeMenu}
+                  >
+                    Panel
+                  </a>
+                )}
+
+                <button
+                  type="button"
+                  className={loginButton}
+                  onClick={handleLogout}
+                >
+                  Cerrar sesión
+                </button>
+              </>
             ) : (
               <>
                 <button
@@ -210,45 +278,56 @@ export default function Navbar() {
 
           </div>
 
-          
-          <button
-            className="relative top-1 z-30 grid h-10 w-10 place-items-center rounded-md border border-white/10 text-white transition hover:border-white/25 hover:bg-white/10 min-[960px]:hidden"
-            type="button"
-            aria-label={
-              isMenuOpen ? "Cerrar menu" : "Abrir menu"
-            }
-            aria-expanded={isMenuOpen}
-            aria-controls="mobile-menu"
-            onClick={() =>
-              setIsMenuOpen((current) => !current)
-            }
-          >
-            <span className="relative h-5 w-6">
-
+          <div className="ml-auto flex items-center gap-3 min-[960px]:hidden">
+            {user && (
               <span
-                className={`absolute left-0 top-0 h-0.5 w-6 rounded-full bg-current transition duration-300 ${
-                  isMenuOpen
-                    ? "translate-y-[9px] rotate-45"
-                    : ""
-                }`}
-              />
+                className={initialsBadge}
+                aria-label="Usuario activo"
+                title={user.email}
+              >
+                {userInitials}
+              </span>
+            )}
 
-              <span
-                className={`absolute left-0 top-[9px] h-0.5 w-6 rounded-full bg-current transition duration-300 ${
-                  isMenuOpen ? "opacity-0" : ""
-                }`}
-              />
+            <button
+              className="relative top-1 z-30 grid h-10 w-10 place-items-center rounded-md border border-white/10 text-white transition hover:border-white/25 hover:bg-white/10"
+              type="button"
+              aria-label={
+                isMenuOpen ? "Cerrar menu" : "Abrir menu"
+              }
+              aria-expanded={isMenuOpen}
+              aria-controls="mobile-menu"
+              onClick={() =>
+                setIsMenuOpen((current) => !current)
+              }
+            >
+              <span className="relative h-5 w-6">
 
-              <span
-                className={`absolute left-0 top-[18px] h-0.5 w-6 rounded-full bg-current transition duration-300 ${
-                  isMenuOpen
-                    ? "-translate-y-[9px] -rotate-45"
-                    : ""
-                }`}
-              />
+                <span
+                  className={`absolute left-0 top-0 h-0.5 w-6 rounded-full bg-current transition duration-300 ${
+                    isMenuOpen
+                      ? "translate-y-[9px] rotate-45"
+                      : ""
+                  }`}
+                />
 
-            </span>
-          </button>
+                <span
+                  className={`absolute left-0 top-[9px] h-0.5 w-6 rounded-full bg-current transition duration-300 ${
+                    isMenuOpen ? "opacity-0" : ""
+                  }`}
+                />
+
+                <span
+                  className={`absolute left-0 top-[18px] h-0.5 w-6 rounded-full bg-current transition duration-300 ${
+                    isMenuOpen
+                      ? "-translate-y-[9px] -rotate-45"
+                      : ""
+                  }`}
+                />
+
+              </span>
+            </button>
+          </div>
 
         </div>
 
@@ -294,10 +373,18 @@ export default function Navbar() {
 
             <a
               className={navLink}
+              href="/pedidos"
+              onClick={closeMenu}
+            >
+              Pedidos
+            </a>
+
+            <a
+              className={navLink}
               href="/reservas"
               onClick={closeMenu}
             >
-              Pedidos y reservas
+              Reservas
             </a>
 
             <a
@@ -320,13 +407,39 @@ export default function Navbar() {
           <div className="grid gap-2 pb-6">
 
             {user ? (
-              <button
-                type="button"
-                className={`${loginButton} w-full`}
-                onClick={handleLogout}
-              >
-                Cerrar sesión
-              </button>
+              <>
+                <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.04] p-3">
+                  <span
+                    className={initialsBadge}
+                    aria-label="Usuario activo"
+                    title={user.email}
+                  >
+                    {userInitials}
+                  </span>
+
+                  <span className="min-w-0 truncate text-sm font-extrabold text-[#b9b9b9]">
+                    {user.email}
+                  </span>
+                </div>
+
+                {adminPath && (
+                  <a
+                    className={`${adminButton} w-full`}
+                    href={adminPath}
+                    onClick={closeMenu}
+                  >
+                    Ir al panel
+                  </a>
+                )}
+
+                <button
+                  type="button"
+                  className={`${loginButton} w-full`}
+                  onClick={handleLogout}
+                >
+                  Cerrar sesión
+                </button>
+              </>
             ) : (
               <>
                 <button

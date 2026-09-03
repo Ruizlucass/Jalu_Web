@@ -10,6 +10,7 @@ export const panelConfigs = {
       { href: "/admin/promociones", label: "Ofertas" },
       { href: "/admin/reservas", label: "Reservas" },
       { href: "/admin/pedidos", label: "Pedidos" },
+      { href: "/admin/finalizados", label: "Finalizados" },
     ],
   },
   superadmin: {
@@ -23,6 +24,7 @@ export const panelConfigs = {
       { href: "/superadmin/promociones", label: "Ofertas" },
       { href: "/superadmin/reservas", label: "Reservas" },
       { href: "/superadmin/pedidos", label: "Pedidos" },
+      { href: "/superadmin/finalizados", label: "Finalizados" },
       { href: "/superadmin/usuarios", label: "Usuarios" },
       { href: "/superadmin/roles", label: "Roles" },
     ],

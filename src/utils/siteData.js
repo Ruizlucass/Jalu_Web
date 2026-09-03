@@ -1,10 +1,10 @@
 export const whatsappBase = "https://wa.me/543810000000";
 
 export const quickLinks = [
-  { label: "Pedir delivery", href: "/reservas#pedidos" },
+  { label: "Pedir delivery", href: "/pedidos" },
   { label: "Ver menu", href: "/menu" },
-  { label: "Arabe libre", href: "#arabe-libre" },
-  { label: "Reservar", href: "/reservas#reservas" },
+  { label: "Arabe libre", href: "/arabe-libre" },
+  { label: "Reservar", href: "/reservas" },
 ];
 
 export const menuCategories = ["Sfijas", "Kipes", "Shawarma", "Combos", "Dulces arabes"];
