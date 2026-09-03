@@ -1,6 +1,12 @@
 .branch-header {
+  align-items: center;
   justify-content: center;
   text-align: center;
+}
+
+.branch-header > div {
+  display: grid;
+  justify-items: center;
 }
 
 .branch-header .eyebrow {

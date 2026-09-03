@@ -165,7 +165,7 @@ export default function Pedidos() {
         <section className="relative overflow-hidden border-b border-white/10">
           <div className="absolute inset-0 bg-gradient-to-br from-[#e71921]/20 via-transparent to-transparent" />
 
-          <div className="relative mx-auto max-w-7xl px-6 pb-16 pt-28 lg:px-8 lg:pb-24 lg:pt-36">
+          <div className="relative mx-auto max-w-7xl px-6 pb-16 pt-40 sm:pt-32 lg:px-8 lg:pb-24 lg:pt-36">
             <span className="text-sm font-bold uppercase tracking-[0.35em] text-[#e71921]">
               Jalu Comidas Árabes
             </span>
