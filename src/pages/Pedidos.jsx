@@ -350,7 +350,7 @@ export default function Pedidos() {
                     name="nombre"
                     value={form.nombre}
                     onChange={handleChange}
-                    placeholder=""
+                    placeholder="Nombre y apellido"
                     className="w-full rounded-xl border border-white/10 bg-[#090909] px-4 py-3.5 outline-none transition focus:border-[#e71921]"
                   />
                 </div>
@@ -366,7 +366,7 @@ export default function Pedidos() {
                     name="telefono"
                     value={form.telefono}
                     onChange={handleChange}
-                    placeholder=""
+                    placeholder="381..."
                     className="w-full rounded-xl border border-white/10 bg-[#090909] px-4 py-3.5 outline-none transition focus:border-[#e71921]"
                   />
                 </div>
