@@ -3,10 +3,71 @@ import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import AuthModal from "../components/AuthModal";
 import { supabase } from "../supabase";
-import {
-  segundosParaCancelar,
-  formatearTiempo,
-} from "../config/cancellationRules";
+
+// ================================
+// TIEMPOS DE CANCELACIÓN
+// ================================
+
+// Pedidos: 5 minutos
+const PEDIDO_CANCELACION_SEGUNDOS = 5 * 60;
+
+// Reservas: 1 hora
+const RESERVA_CANCELACION_SEGUNDOS = 60 * 60;
+
+function segundosParaCancelar(createdAt, tipo) {
+  if (!createdAt) return 0;
+
+  const fechaCreacion =
+    new Date(createdAt).getTime();
+
+  if (Number.isNaN(fechaCreacion)) {
+    return 0;
+  }
+
+  const limiteSegundos =
+    tipo === "reserva"
+      ? RESERVA_CANCELACION_SEGUNDOS
+      : PEDIDO_CANCELACION_SEGUNDOS;
+
+  const limite =
+    fechaCreacion +
+    limiteSegundos * 1000;
+
+  const restante = Math.ceil(
+    (limite - Date.now()) / 1000
+  );
+
+  return Math.max(0, restante);
+}
+
+function formatearTiempo(segundos) {
+  if (segundos <= 0) {
+    return "0:00";
+  }
+
+  const horas = Math.floor(
+    segundos / 3600
+  );
+
+  const minutos = Math.floor(
+    (segundos % 3600) / 60
+  );
+
+  const segundosRestantes =
+    segundos % 60;
+
+  if (horas > 0) {
+    return `${horas}:${String(
+      minutos
+    ).padStart(2, "0")}:${String(
+      segundosRestantes
+    ).padStart(2, "0")}`;
+  }
+
+  return `${minutos}:${String(
+    segundosRestantes
+  ).padStart(2, "0")}`;
+}
 
 export default function MisSolicitudes() {
   const [session, setSession] = useState(null);
@@ -14,42 +75,56 @@ export default function MisSolicitudes() {
     useState(true);
 
   const [pedidos, setPedidos] = useState([]);
-  const [reservas, setReservas] = useState([]);
+  const [reservas, setReservas] =
+    useState([]);
 
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [loading, setLoading] =
+    useState(true);
 
-  const [ahora, setAhora] = useState(Date.now());
+  const [error, setError] =
+    useState("");
 
-  const [authOpen, setAuthOpen] = useState(false);
-  const [authMode, setAuthMode] = useState("login");
+  const [ahora, setAhora] =
+    useState(Date.now());
+
+  const [authOpen, setAuthOpen] =
+    useState(false);
+
+  const [authMode, setAuthMode] =
+    useState("login");
 
   const [cancelando, setCancelando] =
     useState(null);
 
-  const [confirmarCancelacion, setConfirmarCancelacion] =
-    useState(null);
+  const [
+    confirmarCancelacion,
+    setConfirmarCancelacion,
+  ] = useState(null);
 
   useEffect(() => {
     cargarSesion();
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(
-      (_event, nuevaSession) => {
-        setSession(nuevaSession);
+    } =
+      supabase.auth.onAuthStateChange(
+        (_event, nuevaSession) => {
+          setSession(nuevaSession);
 
-        if (nuevaSession?.user) {
-          cargarSolicitudes(nuevaSession.user.id);
-        } else {
-          setPedidos([]);
-          setReservas([]);
-          setLoading(false);
+          if (nuevaSession?.user) {
+            cargarSolicitudes(
+              nuevaSession.user.id
+            );
+          } else {
+            setPedidos([]);
+            setReservas([]);
+            setLoading(false);
+          }
         }
-      }
-    );
+      );
 
-    return () => subscription.unsubscribe();
+    return () =>
+      subscription.unsubscribe();
   }, []);
 
   useEffect(() => {
@@ -57,46 +132,54 @@ export default function MisSolicitudes() {
       setAhora(Date.now());
     }, 1000);
 
-    return () => clearInterval(interval);
+    return () =>
+      clearInterval(interval);
   }, []);
 
   async function cargarSesion() {
     const {
       data: { session },
-    } = await supabase.auth.getSession();
+    } =
+      await supabase.auth.getSession();
 
     setSession(session);
     setLoadingSession(false);
 
     if (session?.user) {
-      cargarSolicitudes(session.user.id);
+      cargarSolicitudes(
+        session.user.id
+      );
     } else {
       setLoading(false);
     }
   }
 
-  async function cargarSolicitudes(userId) {
+  async function cargarSolicitudes(
+    userId
+  ) {
     setLoading(true);
     setError("");
 
-    const [pedidosResponse, reservasResponse] =
-      await Promise.all([
-        supabase
-          .from("pedidos")
-          .select("*")
-          .eq("user_id", userId)
-          .order("created_at", {
-            ascending: false,
-          }),
+    const [
+      pedidosResponse,
+      reservasResponse,
+    ] = await Promise.all([
+      supabase
+        .from("pedidos")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", {
+          ascending: false,
+        }),
 
-        supabase
-          .from("reservas")
-          .select("*")
-          .eq("user_id", userId)
-          .order("created_at", {
-            ascending: false,
-          }),
-      ]);
+      supabase
+        .from("reservas")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", {
+          ascending: false,
+        }),
+    ]);
 
     if (
       pedidosResponse.error ||
@@ -115,37 +198,71 @@ export default function MisSolicitudes() {
       return;
     }
 
-    setPedidos(pedidosResponse.data || []);
-    setReservas(reservasResponse.data || []);
+    setPedidos(
+      pedidosResponse.data || []
+    );
+
+    setReservas(
+      reservasResponse.data || []
+    );
 
     setLoading(false);
   }
 
-  function tiempoRestante(item) {
-    // ahora provoca que React actualice cada segundo.
+  function tiempoRestante(
+    item,
+    tipo
+  ) {
+    // Hace que React actualice el contador
+    // cada segundo.
     void ahora;
 
-    if (item.estado !== "pendiente") {
+    if (
+      item.estado !== "pendiente"
+    ) {
       return 0;
     }
 
     return segundosParaCancelar(
-      item.created_at
+      item.created_at,
+      tipo
     );
   }
 
-  function puedeCancelar(item) {
+  function puedeCancelar(
+    item,
+    tipo
+  ) {
     return (
       item.estado === "pendiente" &&
-      tiempoRestante(item) > 0
+      tiempoRestante(
+        item,
+        tipo
+      ) > 0
     );
   }
 
   async function cancelarSolicitud() {
-    if (!confirmarCancelacion) return;
+    if (!confirmarCancelacion) {
+      return;
+    }
 
     const { tipo, item } =
       confirmarCancelacion;
+
+    // Comprobamos también en frontend
+    // que todavía esté dentro del tiempo.
+    if (!puedeCancelar(item, tipo)) {
+      setConfirmarCancelacion(null);
+
+      setError(
+        tipo === "reserva"
+          ? "La hora disponible para cancelar esta reserva ya finalizó."
+          : "Los 5 minutos disponibles para cancelar este pedido ya finalizaron."
+      );
+
+      return;
+    }
 
     setCancelando(
       `${tipo}-${item.id}`
@@ -161,10 +278,12 @@ export default function MisSolicitudes() {
     const parametros =
       tipo === "pedido"
         ? {
-            p_pedido_id: String(item.id),
+            p_pedido_id:
+              String(item.id),
           }
         : {
-            p_reserva_id: String(item.id),
+            p_reserva_id:
+              String(item.id),
           };
 
     const { error: cancelError } =
@@ -176,9 +295,13 @@ export default function MisSolicitudes() {
     setCancelando(null);
 
     if (cancelError) {
-      console.error(cancelError);
+      console.error(
+        cancelError
+      );
 
-      setConfirmarCancelacion(null);
+      setConfirmarCancelacion(
+        null
+      );
 
       setError(
         cancelError.message ||
@@ -240,14 +363,18 @@ export default function MisSolicitudes() {
     tipo,
   }) {
     const segundos =
-      tiempoRestante(item);
+      tiempoRestante(
+        item,
+        tipo
+      );
 
     if (
       item.estado === "cancelado"
     ) {
       return (
         <p className="text-sm text-red-400">
-          Esta solicitud fue cancelada.
+          Esta solicitud fue
+          cancelada.
         </p>
       );
     }
@@ -257,8 +384,8 @@ export default function MisSolicitudes() {
     ) {
       return (
         <p className="text-sm text-gray-500">
-          Esta solicitud ya no puede
-          cancelarse.
+          Esta solicitud ya no
+          puede cancelarse.
         </p>
       );
     }
@@ -266,20 +393,32 @@ export default function MisSolicitudes() {
     if (segundos <= 0) {
       return (
         <p className="text-sm text-gray-500">
-          La ventana de cancelación
-          finalizó.
+          La ventana de
+          cancelación finalizó.
         </p>
       );
     }
 
     return (
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-gray-400">
-          Podés cancelar durante{" "}
-          <span className="font-black text-white">
-            {formatearTiempo(segundos)}
-          </span>
-        </p>
+        <div>
+          <p className="text-sm text-gray-400">
+            {tipo === "reserva"
+              ? "Podés cancelar la reserva durante "
+              : "Podés cancelar el pedido durante "}
+            <span className="font-black text-white">
+              {formatearTiempo(
+                segundos
+              )}
+            </span>
+          </p>
+
+          <p className="mt-1 text-xs text-gray-500">
+            {tipo === "reserva"
+              ? "La reserva puede cancelarse durante 1 hora desde que fue realizada."
+              : "El pedido puede cancelarse durante 5 minutos desde que fue realizado."}
+          </p>
+        </div>
 
         <button
           type="button"
@@ -312,8 +451,8 @@ export default function MisSolicitudes() {
           </h1>
 
           <p className="mt-4 max-w-2xl text-gray-400">
-            Consultá el estado de tus
-            pedidos y reservas.
+            Consultá el estado de
+            tus pedidos y reservas.
           </p>
 
           {!loadingSession &&
@@ -324,16 +463,22 @@ export default function MisSolicitudes() {
                 </h2>
 
                 <p className="mt-3 text-gray-400">
-                  Necesitás iniciar sesión
-                  para consultar tus pedidos
-                  y reservas.
+                  Necesitás iniciar
+                  sesión para consultar
+                  tus pedidos y
+                  reservas.
                 </p>
 
                 <button
                   type="button"
                   onClick={() => {
-                    setAuthMode("login");
-                    setAuthOpen(true);
+                    setAuthMode(
+                      "login"
+                    );
+
+                    setAuthOpen(
+                      true
+                    );
                   }}
                   className="mt-5 rounded-xl bg-[#e71921] px-6 py-3 font-bold"
                 >
@@ -350,6 +495,9 @@ export default function MisSolicitudes() {
 
           {session && (
             <>
+              {/* =========================
+                  PEDIDOS
+              ========================== */}
               <section className="mt-12">
                 <h2 className="text-3xl font-black">
                   Mis pedidos
@@ -360,7 +508,8 @@ export default function MisSolicitudes() {
                     pedidos.length ===
                       0 && (
                       <p className="text-gray-500">
-                        Todavía no realizaste
+                        Todavía no
+                        realizaste
                         pedidos.
                       </p>
                     )}
@@ -368,18 +517,24 @@ export default function MisSolicitudes() {
                   {pedidos.map(
                     (pedido) => (
                       <article
-                        key={pedido.id}
+                        key={
+                          pedido.id
+                        }
                         className="rounded-3xl border border-white/10 bg-[#111111] p-6"
                       >
                         <div className="flex flex-wrap items-start justify-between gap-4">
                           <div>
                             <p className="text-sm text-gray-500">
                               Pedido #
-                              {pedido.id}
+                              {
+                                pedido.id
+                              }
                             </p>
 
                             <h3 className="mt-1 text-xl font-black">
-                              {pedido.sucursal}
+                              {
+                                pedido.sucursal
+                              }
                             </h3>
                           </div>
 
@@ -413,7 +568,9 @@ export default function MisSolicitudes() {
 
                         <div className="mt-6 border-t border-white/10 pt-5">
                           <BotonCancelar
-                            item={pedido}
+                            item={
+                              pedido
+                            }
                             tipo="pedido"
                           />
                         </div>
@@ -423,6 +580,9 @@ export default function MisSolicitudes() {
                 </div>
               </section>
 
+              {/* =========================
+                  RESERVAS
+              ========================== */}
               <section className="mt-16">
                 <h2 className="text-3xl font-black">
                   Mis reservas
@@ -433,7 +593,8 @@ export default function MisSolicitudes() {
                     reservas.length ===
                       0 && (
                       <p className="text-gray-500">
-                        Todavía no realizaste
+                        Todavía no
+                        realizaste
                         reservas.
                       </p>
                     )}
@@ -441,14 +602,18 @@ export default function MisSolicitudes() {
                   {reservas.map(
                     (reserva) => (
                       <article
-                        key={reserva.id}
+                        key={
+                          reserva.id
+                        }
                         className="rounded-3xl border border-white/10 bg-[#111111] p-6"
                       >
                         <div className="flex flex-wrap items-start justify-between gap-4">
                           <div>
                             <p className="text-sm text-gray-500">
                               Reserva #
-                              {reserva.id}
+                              {
+                                reserva.id
+                              }
                             </p>
 
                             <h3 className="mt-1 text-xl font-black">
@@ -470,27 +635,35 @@ export default function MisSolicitudes() {
                             <strong className="text-gray-200">
                               Fecha:
                             </strong>{" "}
-                            {reserva.fecha}
+                            {
+                              reserva.fecha
+                            }
                           </p>
 
                           <p>
                             <strong className="text-gray-200">
                               Hora:
                             </strong>{" "}
-                            {reserva.hora}
+                            {
+                              reserva.hora
+                            }
                           </p>
 
                           <p>
                             <strong className="text-gray-200">
                               Personas:
                             </strong>{" "}
-                            {reserva.personas}
+                            {
+                              reserva.personas
+                            }
                           </p>
                         </div>
 
                         <div className="mt-6 border-t border-white/10 pt-5">
                           <BotonCancelar
-                            item={reserva}
+                            item={
+                              reserva
+                            }
                             tipo="reserva"
                           />
                         </div>
@@ -506,9 +679,11 @@ export default function MisSolicitudes() {
 
       <Footer />
 
+      {/* MODAL CONFIRMAR CANCELACIÓN */}
       {confirmarCancelacion && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/80 px-4 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-3xl border border-white/10 bg-[#111111] p-7 text-white">
+
             <h2 className="text-2xl font-black">
               ¿Cancelar{" "}
               {confirmarCancelacion.tipo ===
@@ -519,8 +694,9 @@ export default function MisSolicitudes() {
             </h2>
 
             <p className="mt-3 leading-6 text-gray-400">
-              Esta acción marcará la
-              solicitud como cancelada.
+              Esta acción marcará
+              la solicitud como
+              cancelada.
             </p>
 
             <div className="mt-6 grid grid-cols-2 gap-3">
