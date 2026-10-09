@@ -55,6 +55,8 @@ export default function RegisterForm({
         throw error;
       }
 
+      await syncProfileName(data.user, form.name);
+
       console.log(
         "USUARIO REGISTRADO:",
         data.user
@@ -184,4 +186,34 @@ export default function RegisterForm({
       )}
     </form>
   );
+}
+
+async function syncProfileName(user, name) {
+  if (!user?.id) {
+    return;
+  }
+
+  const profileUpdates = [
+    { nombre: name },
+    { email: user.email, name },
+    { email: user.email, nombre: name },
+    { name },
+    { full_name: name },
+  ];
+
+  for (const update of profileUpdates) {
+    const { error } = await supabase
+      .from("profiles")
+      .upsert(
+        {
+          id: user.id,
+          ...update,
+        },
+        { onConflict: "id" }
+      );
+
+    if (!error) {
+      return;
+    }
+  }
 }

@@ -11,6 +11,7 @@ export const panelConfigs = {
       { href: "/admin/reservas", label: "Reservas" },
       { href: "/admin/pedidos", label: "Pedidos" },
       { href: "/admin/finalizados", label: "Finalizados" },
+      { href: "/admin/usuarios", label: "Usuarios" },
     ],
   },
   superadmin: {

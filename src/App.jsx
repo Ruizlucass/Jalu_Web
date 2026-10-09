@@ -141,11 +141,8 @@ function getPanelPage(pathname, panelType) {
     return <Cancelled {...pageProps} />;
   }
 
-  if (
-    panelType === "superadmin" &&
-    section === "usuarios"
-  ) {
-    return <Users />;
+  if (section === "usuarios") {
+    return <Users panelType={panelType} />;
   }
 
   if (
