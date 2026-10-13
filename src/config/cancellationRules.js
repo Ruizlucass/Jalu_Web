@@ -1,20 +1,74 @@
-export const CANCEL_MINUTES = 5;
+export const ORDER_CANCELLATION_WINDOW_MS =
+  5 * 60 * 1000;
 
-export function segundosParaCancelar(createdAt) {
+export const RESERVATION_CANCELLATION_WINDOW_MS =
+  60 * 60 * 1000;
+
+export function getCancellationRemainingMs(
+  createdAt,
+  requestType,
+  now = Date.now()
+) {
   if (!createdAt) return 0;
 
-  const creado = new Date(createdAt).getTime();
-  const limite = creado + CANCEL_MINUTES * 60 * 1000;
-  const restante = Math.floor((limite - Date.now()) / 1000);
+  const createdTime = new Date(createdAt).getTime();
 
-  return Math.max(0, restante);
+  const limit =
+    requestType === "reserva"
+      ? RESERVATION_CANCELLATION_WINDOW_MS
+      : ORDER_CANCELLATION_WINDOW_MS;
+
+  return Math.max(
+    0,
+    createdTime + limit - now
+  );
 }
 
-export function formatearTiempo(segundos) {
-  const minutos = Math.floor(segundos / 60);
-  const segundosRestantes = segundos % 60;
+export function canCancelRequest(
+  request,
+  requestType,
+  now = Date.now()
+) {
+  if (!request) return false;
 
-  return `${String(minutos).padStart(2, "0")}:${String(
-    segundosRestantes
-  ).padStart(2, "0")}`;
+  if (request.estado !== "pendiente") {
+    return false;
+  }
+
+  return (
+    getCancellationRemainingMs(
+      request.created_at,
+      requestType,
+      now
+    ) > 0
+  );
+}
+
+export function formatRemainingTime(ms) {
+  if (ms <= 0) return "0:00";
+
+  const totalSeconds = Math.ceil(ms / 1000);
+
+  const hours = Math.floor(
+    totalSeconds / 3600
+  );
+
+  const minutes = Math.floor(
+    (totalSeconds % 3600) / 60
+  );
+
+  const seconds =
+    totalSeconds % 60;
+
+  if (hours > 0) {
+    return `${hours}:${String(minutes).padStart(
+      2,
+      "0"
+    )}:${String(seconds).padStart(2, "0")}`;
+  }
+
+  return `${minutes}:${String(seconds).padStart(
+    2,
+    "0"
+  )}`;
 }

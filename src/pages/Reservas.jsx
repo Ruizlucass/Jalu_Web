@@ -247,7 +247,7 @@ export default function Reservas() {
       setConfirmOpen(false);
 
       setMensaje(
-        "¡Reserva enviada! Quedó pendiente de confirmación. Tenés 5 minutos para cancelarla desde Mis solicitudes."
+        "¡Reserva enviada! Quedó pendiente de confirmación. Tenés 1 hora para cancelarla desde Mis solicitudes."
       );
 
       setForm({
