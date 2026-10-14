@@ -1,5 +1,6 @@
 import Footer from "../components/Footer.jsx";
 import Navbar from "../components/Navbar.jsx";
+import { BranchCard } from "../components/Sucursales.jsx";
 import WspFlotante from "../components/WspFlotante.jsx";
 import { branches } from "../utils/siteData.js";
 
@@ -71,7 +72,7 @@ export default function SobreNosotros() {
       </section>
 
       <section className="border-y border-white/10 bg-[#101010] px-6 py-20">
-        <div className="mx-auto max-w-6xl">
+        <div className="mx-auto max-w-7xl">
           <div className="mb-12 flex flex-col gap-4 text-center min-[760px]:items-center">
             <div>
               <span className="text-sm font-black uppercase tracking-[0.3em] text-[#e71921]">
@@ -82,30 +83,13 @@ export default function SobreNosotros() {
               </h2>
             </div>
             <p className="mx-auto max-w-2xl font-bold leading-6 text-[#b9b9b9]">
-              Estos datos son de prueba para que la pagina no quede vacia. Despues
-              podes reemplazar direcciones, horarios y enlaces reales.
+              Elegí la sucursal más cercana, abrí el mapa o empezá tu pedido.
             </p>
           </div>
 
-          <div className="grid gap-4 min-[640px]:grid-cols-2 min-[960px]:grid-cols-3">
-            {branches.slice(0, 6).map((branch) => (
-              <article key={branch.name} className="grid gap-4 rounded-2xl border border-white/10 bg-[#121212] p-6 transition duration-300 hover:-translate-y-1 hover:border-[#e71921]/50">
-                <span className="text-sm font-black uppercase text-[#e71921]">{branch.zone}</span>
-                <h3 className="text-xl font-black uppercase">{branch.name}</h3>
-                <p className="font-bold leading-6 text-[#b9b9b9]">
-                  {branch.address}
-                  <br />
-                  Todos los dias de 12:00 a 00:00
-                </p>
-                <a
-                  className="inline-flex min-h-10 items-center justify-center rounded-md border border-white/10 px-4 text-xs font-black uppercase transition duration-200 hover:-translate-y-px hover:border-white/25 hover:bg-white/10"
-                  href="https://maps.google.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Como llegar
-                </a>
-              </article>
+          <div className="flex flex-wrap justify-center gap-8">
+            {branches.map((branch) => (
+              <BranchCard key={branch.name} branch={branch} />
             ))}
           </div>
         </div>

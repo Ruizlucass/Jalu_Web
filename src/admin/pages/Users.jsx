@@ -141,7 +141,7 @@ export default function Users({ panelType = "superadmin" }) {
     <PageShell
       eyebrow="Usuarios"
       title="Usuarios"
-      description={`Vista del ${config.label.toLowerCase()} para revisar cuentas registradas y su estado.`}
+      description="Vista del superadmin para revisar cuentas registradas y cambiar roles."
     >
       <AdminSection
         eyebrow={config.label}
