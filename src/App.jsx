@@ -7,6 +7,7 @@ import Login from "./pages/Login.jsx";
 import Register from "./pages/Register.jsx";
 import ArabeLibre from "./pages/ArabeLibre.jsx";
 import ClubJalu from "./pages/ClubJalu.jsx";
+import MisSolicitudes from "./pages/MisSolicitudes.jsx";
 
 import AdminLayout from "./admin/AdminLayout.jsx";
 import Dashboard from "./admin/pages/Dashboard.jsx";
@@ -15,6 +16,7 @@ import Promotions from "./admin/pages/Promotions.jsx";
 import Reservations from "./admin/pages/Reservations.jsx";
 import Orders from "./admin/pages/Orders.jsx";
 import Completed from "./admin/pages/Completed.jsx";
+import Cancelled from "./admin/pages/Cancelled.jsx";
 import Users from "./admin/pages/Users.jsx";
 import Roles from "./admin/pages/Roles.jsx";
 import Unavailable from "./admin/pages/Unavailable.jsx";
@@ -78,6 +80,10 @@ export default function App() {
     return <Reservas />;
   }
 
+  if (pathname === "/mis-solicitudes") {
+    return <MisSolicitudes />;
+  }
+
   if (pathname === "/sobre-nosotros") {
     return <SobreNosotros />;
   }
@@ -131,11 +137,12 @@ function getPanelPage(pathname, panelType) {
     return <Completed {...pageProps} />;
   }
 
-  if (
-    panelType === "superadmin" &&
-    section === "usuarios"
-  ) {
-    return <Users />;
+  if (section === "cancelados") {
+    return <Cancelled {...pageProps} />;
+  }
+
+  if (section === "usuarios") {
+    return <Users panelType={panelType} />;
   }
 
   if (

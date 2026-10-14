@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import AuthModal from "../components/AuthModal";
+import ConfirmRequestModal from "../components/ConfirmRequestModal.jsx";
 import { supabase } from "../supabase";
 
 export default function Pedidos() {
@@ -14,6 +15,7 @@ export default function Pedidos() {
   const [enviando, setEnviando] = useState(false);
   const [mensaje, setMensaje] = useState("");
   const [error, setError] = useState("");
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const [form, setForm] = useState({
     nombre: "",
@@ -57,6 +59,9 @@ export default function Pedidos() {
       ...actual,
       [name]: value,
     }));
+
+    setError("");
+    setMensaje("");
   }
 
   function abrirLogin() {
@@ -64,7 +69,7 @@ export default function Pedidos() {
     setAuthOpen(true);
   }
 
-  async function guardarPedido(e) {
+  function guardarPedido(e) {
     e.preventDefault();
 
     setError("");
@@ -76,12 +81,14 @@ export default function Pedidos() {
     }
 
     if (
-      !form.nombre ||
-      !form.telefono ||
+      !form.nombre.trim() ||
+      !form.telefono.trim() ||
       !form.sucursal ||
       !form.descripcion.trim()
     ) {
-      setError("Completá todos los campos obligatorios.");
+      setError(
+        "Completá todos los campos obligatorios."
+      );
       return;
     }
 
@@ -95,64 +102,92 @@ export default function Pedidos() {
       return;
     }
 
-    setEnviando(true);
+    setConfirmOpen(true);
+  }
 
-    const { error: supabaseError } = await supabase
-      .from("pedidos")
-      .insert({
-        user_id: session.user.id,
-
-        nombre: form.nombre,
-        email: session.user.email,
-        telefono: form.telefono,
-
-        sucursal: form.sucursal,
-
-        tipo_entrega: form.tipo_entrega,
-
-        direccion:
-          form.tipo_entrega === "delivery"
-            ? form.direccion
-            : null,
-
-        descripcion: form.descripcion.trim(),
-
-        observaciones:
-          form.observaciones || null,
-
-        total: 0,
-
-        estado: "pendiente",
-      });
-
-    setEnviando(false);
-
-    if (supabaseError) {
-      console.error(
-        "Error registrando pedido:",
-        supabaseError
-      );
-
-      setError(
-        "No pudimos registrar el pedido. Intentá nuevamente."
-      );
-
+  async function confirmarPedido() {
+    if (!session?.user || enviando) {
       return;
     }
 
-    setMensaje(
-      "¡Pedido registrado! Quedó pendiente de confirmación."
-    );
+    setEnviando(true);
+    setError("");
+    setMensaje("");
 
-    setForm({
-      nombre: "",
-      telefono: "",
-      sucursal: "",
-      tipo_entrega: "retiro",
-      direccion: "",
-      descripcion: "",
-      observaciones: "",
-    });
+    try {
+      const { error: supabaseError } =
+        await supabase
+          .from("pedidos")
+          .insert({
+            user_id: session.user.id,
+
+            nombre: form.nombre.trim(),
+            email: session.user.email,
+            telefono: form.telefono.trim(),
+
+            sucursal: form.sucursal,
+
+            tipo_entrega:
+              form.tipo_entrega,
+
+            direccion:
+              form.tipo_entrega ===
+              "delivery"
+                ? form.direccion.trim()
+                : null,
+
+            descripcion:
+              form.descripcion.trim(),
+
+            observaciones:
+              form.observaciones.trim() ||
+              null,
+
+            total: 0,
+
+            estado: "pendiente",
+          });
+
+      if (supabaseError) {
+        console.error(
+          "Error registrando pedido:",
+          supabaseError
+        );
+
+        setError(
+          "No pudimos registrar el pedido. Intentá nuevamente."
+        );
+
+        return;
+      }
+
+      setConfirmOpen(false);
+
+      setMensaje(
+        "¡Pedido registrado! Quedó pendiente de confirmación. Tenés 5 minutos para cancelarlo desde Mis solicitudes."
+      );
+
+      setForm({
+        nombre: "",
+        telefono: "",
+        sucursal: "",
+        tipo_entrega: "retiro",
+        direccion: "",
+        descripcion: "",
+        observaciones: "",
+      });
+    } catch (unexpectedError) {
+      console.error(
+        "Error inesperado registrando pedido:",
+        unexpectedError
+      );
+
+      setError(
+        "Ocurrió un error inesperado. Intentá nuevamente."
+      );
+    } finally {
+      setEnviando(false);
+    }
   }
 
   return (
@@ -160,7 +195,6 @@ export default function Pedidos() {
       <Navbar />
 
       <main className="min-h-screen bg-[#090909] text-white">
-
         {/* HERO */}
         <section className="relative overflow-hidden border-b border-white/10">
           <div className="absolute inset-0 bg-gradient-to-br from-[#e71921]/20 via-transparent to-transparent" />
@@ -172,7 +206,9 @@ export default function Pedidos() {
 
             <h1 className="mt-4 max-w-3xl text-5xl font-black tracking-tight sm:text-6xl lg:text-7xl">
               Pedí Jalu
-              <span className="text-[#e71921]">.</span>
+              <span className="text-[#e71921]">
+                .
+              </span>
             </h1>
 
             <p className="mt-6 max-w-2xl text-lg leading-8 text-gray-400">
@@ -252,7 +288,6 @@ export default function Pedidos() {
         {/* PEDIDO */}
         <section className="border-t border-white/10 bg-[#0c0c0c]">
           <div className="mx-auto grid max-w-7xl gap-12 px-6 py-16 lg:grid-cols-[0.8fr_1.2fr] lg:px-8 lg:py-24">
-
             {/* INFORMACIÓN */}
             <div>
               <p className="text-sm font-bold uppercase tracking-[0.25em] text-[#e71921]">
@@ -339,7 +374,6 @@ export default function Pedidos() {
                 onSubmit={guardarPedido}
                 className="space-y-5"
               >
-                {/* NOMBRE */}
                 <div>
                   <label className="mb-2 block text-sm font-semibold text-gray-300">
                     Nombre y apellido
@@ -355,7 +389,6 @@ export default function Pedidos() {
                   />
                 </div>
 
-                {/* TELÉFONO */}
                 <div>
                   <label className="mb-2 block text-sm font-semibold text-gray-300">
                     Teléfono
@@ -371,7 +404,6 @@ export default function Pedidos() {
                   />
                 </div>
 
-                {/* SUCURSAL */}
                 <div>
                   <label className="mb-2 block text-sm font-semibold text-gray-300">
                     Sucursal
@@ -401,7 +433,6 @@ export default function Pedidos() {
                   </select>
                 </div>
 
-                {/* TIPO ENTREGA */}
                 <div>
                   <label className="mb-3 block text-sm font-semibold text-gray-300">
                     ¿Cómo querés recibirlo?
@@ -464,7 +495,6 @@ export default function Pedidos() {
                   </div>
                 </div>
 
-                {/* DIRECCIÓN */}
                 {form.tipo_entrega === "delivery" && (
                   <div>
                     <label className="mb-2 block text-sm font-semibold text-gray-300">
@@ -482,7 +512,6 @@ export default function Pedidos() {
                   </div>
                 )}
 
-                {/* DESCRIPCIÓN DEL PEDIDO */}
                 <div>
                   <label className="mb-2 block text-sm font-semibold text-gray-300">
                     Descripción del pedido
@@ -499,11 +528,12 @@ export default function Pedidos() {
                   />
 
                   <p className="mt-2 text-xs leading-5 text-gray-500">
-                    Escribí qué productos querés pedir. Este detalle se verá completo en el panel.
+                    Escribí qué productos querés pedir.
+                    Este detalle se verá completo en el
+                    panel.
                   </p>
                 </div>
 
-                {/* OBSERVACIONES */}
                 <div>
                   <label className="mb-2 block text-sm font-semibold text-gray-300">
                     Observaciones
@@ -523,21 +553,25 @@ export default function Pedidos() {
                   />
                 </div>
 
-                {/* ERROR */}
                 {error && (
                   <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-300">
                     {error}
                   </div>
                 )}
 
-                {/* ÉXITO */}
                 {mensaje && (
                   <div className="rounded-xl border border-green-500/20 bg-green-500/10 p-4 text-sm text-green-300">
-                    {mensaje}
+                    <p>{mensaje}</p>
+
+                    <a
+                      href="/mis-solicitudes"
+                      className="mt-3 inline-block font-black text-green-200 underline underline-offset-4"
+                    >
+                      Ver mis solicitudes →
+                    </a>
                   </div>
                 )}
 
-                {/* BOTÓN */}
                 <button
                   type="submit"
                   disabled={enviando}
@@ -565,21 +599,27 @@ export default function Pedidos() {
 
             <div className="mx-auto mt-8 grid max-w-3xl gap-4 sm:grid-cols-3">
               <div className="rounded-2xl border border-white/10 bg-[#111111] p-5">
-                <p className="text-2xl">💬</p>
+                <p className="text-2xl">
+                  💬
+                </p>
                 <p className="mt-2 font-bold">
                   WhatsApp
                 </p>
               </div>
 
               <div className="rounded-2xl border border-white/10 bg-[#111111] p-5">
-                <p className="text-2xl">🛵</p>
+                <p className="text-2xl">
+                  🛵
+                </p>
                 <p className="mt-2 font-bold">
                   PedidosYa
                 </p>
               </div>
 
               <div className="rounded-2xl border border-white/10 bg-[#111111] p-5">
-                <p className="text-2xl">🥡</p>
+                <p className="text-2xl">
+                  🥡
+                </p>
                 <p className="mt-2 font-bold">
                   Rappi
                 </p>
@@ -591,11 +631,61 @@ export default function Pedidos() {
 
       <Footer />
 
+      <ConfirmRequestModal
+        open={confirmOpen}
+        title="Confirmar pedido"
+        description="Revisá los datos antes de enviarlos a Jalu."
+        confirmLabel="Sí, confirmar pedido"
+        loading={enviando}
+        onCancel={() =>
+          setConfirmOpen(false)
+        }
+        onConfirm={confirmarPedido}
+        fields={[
+          {
+            label: "Nombre",
+            value: form.nombre,
+          },
+          {
+            label: "Teléfono",
+            value: form.telefono,
+          },
+          {
+            label: "Sucursal",
+            value: form.sucursal,
+          },
+          {
+            label: "Entrega",
+            value:
+              form.tipo_entrega === "delivery"
+                ? "Delivery"
+                : "Take Away",
+          },
+          {
+            label: "Dirección",
+            value:
+              form.tipo_entrega === "delivery"
+                ? form.direccion
+                : "Retira en sucursal",
+          },
+          {
+            label: "Pedido",
+            value: form.descripcion,
+          },
+          {
+            label: "Observaciones",
+            value: form.observaciones,
+          },
+        ]}
+      />
+
       <AuthModal
         open={authOpen}
         mode={authMode}
         setMode={setAuthMode}
-        onClose={() => setAuthOpen(false)}
+        onClose={() =>
+          setAuthOpen(false)
+        }
         onSuccess={() => {
           setAuthOpen(false);
           cargarSesion();

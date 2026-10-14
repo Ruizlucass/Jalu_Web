@@ -1,8 +1,16 @@
-import { useEffect, useMemo, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import AuthModal from "../components/AuthModal";
+import ConfirmRequestModal from "../components/ConfirmRequestModal.jsx";
+
 import { supabase } from "../supabase";
+
 import {
   getAvailableReservationTimes,
   getScheduleDescription,
@@ -12,14 +20,29 @@ import {
 
 export default function Reservas() {
   const [session, setSession] = useState(null);
-  const [loadingSession, setLoadingSession] = useState(true);
 
-  const [authOpen, setAuthOpen] = useState(false);
-  const [authMode, setAuthMode] = useState("login");
+  const [
+    loadingSession,
+    setLoadingSession,
+  ] = useState(true);
 
-  const [enviando, setEnviando] = useState(false);
-  const [mensaje, setMensaje] = useState("");
-  const [error, setError] = useState("");
+  const [authOpen, setAuthOpen] =
+    useState(false);
+
+  const [authMode, setAuthMode] =
+    useState("login");
+
+  const [enviando, setEnviando] =
+    useState(false);
+
+  const [mensaje, setMensaje] =
+    useState("");
+
+  const [error, setError] =
+    useState("");
+
+  const [confirmOpen, setConfirmOpen] =
+    useState(false);
 
   const [form, setForm] = useState({
     nombre: "",
@@ -32,7 +55,11 @@ export default function Reservas() {
   });
 
   const availableTimes = useMemo(
-    () => getAvailableReservationTimes(form.sucursal, form.fecha),
+    () =>
+      getAvailableReservationTimes(
+        form.sucursal,
+        form.fecha
+      ),
     [form.sucursal, form.fecha]
   );
 
@@ -57,15 +84,22 @@ export default function Reservas() {
       const {
         data: { session },
         error,
-      } = await supabase.auth.getSession();
+      } =
+        await supabase.auth.getSession();
 
       if (error) {
-        console.error("Error obteniendo sesión:", error);
+        console.error(
+          "Error obteniendo sesión:",
+          error
+        );
       }
 
       setSession(session);
     } catch (error) {
-      console.error("Error obteniendo sesión:", error);
+      console.error(
+        "Error obteniendo sesión:",
+        error
+      );
     } finally {
       setLoadingSession(false);
     }
@@ -77,7 +111,11 @@ export default function Reservas() {
     setForm((actual) => ({
       ...actual,
       [name]: value,
-      ...((name === "sucursal" || name === "fecha") && { hora: "" }),
+
+      ...((name === "sucursal" ||
+        name === "fecha") && {
+        hora: "",
+      }),
     }));
 
     setError("");
@@ -89,7 +127,7 @@ export default function Reservas() {
     setAuthOpen(true);
   }
 
-  async function guardarReserva(e) {
+  function guardarReserva(e) {
     e.preventDefault();
 
     setError("");
@@ -100,7 +138,9 @@ export default function Reservas() {
       return;
     }
 
-    const personas = Number(form.personas);
+    const personas = Number(
+      form.personas
+    );
 
     if (
       !form.nombre.trim() ||
@@ -109,7 +149,9 @@ export default function Reservas() {
       !form.fecha ||
       !form.hora
     ) {
-      setError("Completá todos los campos obligatorios.");
+      setError(
+        "Completá todos los campos obligatorios."
+      );
       return;
     }
 
@@ -127,35 +169,67 @@ export default function Reservas() {
       return;
     }
 
-    const dateTimeError = validateReservationDateTime({
-      branch: form.sucursal,
-      date: form.fecha,
-      time: form.hora,
-    });
+    const dateTimeError =
+      validateReservationDateTime({
+        branch: form.sucursal,
+        date: form.fecha,
+        time: form.hora,
+      });
 
     if (dateTimeError) {
       setError(dateTimeError);
       return;
     }
 
+    setConfirmOpen(true);
+  }
+
+  async function confirmarReserva() {
+    if (!session?.user || enviando) {
+      return;
+    }
+
+    const personas = Number(
+      form.personas
+    );
+
     setEnviando(true);
+    setError("");
+    setMensaje("");
 
     try {
-      const { error: supabaseError } = await supabase
-        .from("reservas")
-        .insert({
-          user_id: session.user.id,
-          nombre: form.nombre.trim(),
-          email: session.user.email,
-          telefono: form.telefono.trim(),
-          sucursal: form.sucursal,
-          personas,
-          fecha: form.fecha,
-          hora: form.hora,
-          comentarios:
-            form.comentarios.trim() || null,
-          estado: "pendiente",
-        });
+      const { error: supabaseError } =
+        await supabase
+          .from("reservas")
+          .insert({
+            user_id: session.user.id,
+
+            nombre:
+              form.nombre.trim(),
+
+            email:
+              session.user.email,
+
+            telefono:
+              form.telefono.trim(),
+
+            sucursal:
+              form.sucursal,
+
+            personas,
+
+            fecha:
+              form.fecha,
+
+            hora:
+              form.hora,
+
+            comentarios:
+              form.comentarios.trim() ||
+              null,
+
+            estado: "pendiente",
+          });
 
       if (supabaseError) {
         console.error(
@@ -170,8 +244,10 @@ export default function Reservas() {
         return;
       }
 
+      setConfirmOpen(false);
+
       setMensaje(
-        "¡Reserva enviada! Quedó registrada y está pendiente de confirmación."
+        "¡Reserva enviada! Quedó pendiente de confirmación. Tenés 1 hora para cancelarla desde Mis solicitudes."
       );
 
       setForm({
@@ -183,10 +259,10 @@ export default function Reservas() {
         hora: "",
         comentarios: "",
       });
-    } catch (error) {
+    } catch (unexpectedError) {
       console.error(
         "Error inesperado registrando reserva:",
-        error
+        unexpectedError
       );
 
       setError(
@@ -197,13 +273,15 @@ export default function Reservas() {
     }
   }
 
-  const masDe50 = Number(form.personas) > 50;
+  const masDe50 =
+    Number(form.personas) > 50;
 
-  const mensajeWhatsapp = encodeURIComponent(
-    `Hola Jalu, quisiera consultar por una reserva para ${
-      form.personas || ""
-    } personas.`
-  );
+  const mensajeWhatsapp =
+    encodeURIComponent(
+      `Hola Jalu, quisiera consultar por una reserva para ${
+        form.personas || ""
+      } personas.`
+    );
 
   return (
     <>
@@ -227,8 +305,9 @@ export default function Reservas() {
             </h1>
 
             <p className="mt-6 max-w-2xl text-lg leading-8 text-gray-400">
-              Elegí tu sucursal, fecha y horario.
-              Nosotros nos encargamos del resto.
+              Elegí tu sucursal, fecha y
+              horario. Nosotros nos
+              encargamos del resto.
             </p>
           </div>
         </section>
@@ -248,13 +327,17 @@ export default function Reservas() {
             </h2>
 
             <p className="mt-5 max-w-md text-gray-400">
-              Completá tus datos y tu reserva quedará
-              registrada en nuestro sistema.
+              Completá tus datos y tu reserva
+              quedará registrada en nuestro
+              sistema.
             </p>
 
             <div className="mt-10 space-y-4">
               {[
-                ["01", "Elegí la sucursal"],
+                [
+                  "01",
+                  "Elegí la sucursal",
+                ],
                 [
                   "02",
                   "Seleccioná fecha y horario",
@@ -267,20 +350,22 @@ export default function Reservas() {
                   "04",
                   "Esperá la confirmación",
                 ],
-              ].map(([numero, texto]) => (
-                <div
-                  key={numero}
-                  className="flex items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4"
-                >
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#e71921] font-black">
-                    {numero}
-                  </span>
+              ].map(
+                ([numero, texto]) => (
+                  <div
+                    key={numero}
+                    className="flex items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4"
+                  >
+                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#e71921] font-black">
+                      {numero}
+                    </span>
 
-                  <span className="font-semibold">
-                    {texto}
-                  </span>
-                </div>
-              ))}
+                    <span className="font-semibold">
+                      {texto}
+                    </span>
+                  </div>
+                )
+              )}
             </div>
 
             <div className="mt-8 rounded-2xl border border-[#e71921]/20 bg-[#e71921]/5 p-5">
@@ -289,8 +374,9 @@ export default function Reservas() {
               </p>
 
               <p className="mt-2 text-sm text-gray-400">
-                Las reservas grandes se coordinan
-                personalmente con nuestro equipo.
+                Las reservas grandes se
+                coordinan personalmente con
+                nuestro equipo.
               </p>
             </div>
           </div>
@@ -308,39 +394,41 @@ export default function Reservas() {
             </div>
 
             {/* AVISO LOGIN */}
-            {!loadingSession && !session && (
-              <div className="mb-6 rounded-xl border border-[#e71921]/30 bg-[#e71921]/10 p-4">
-                <p className="font-semibold">
-                  Necesitás iniciar sesión para
-                  reservar.
-                </p>
+            {!loadingSession &&
+              !session && (
+                <div className="mb-6 rounded-xl border border-[#e71921]/30 bg-[#e71921]/10 p-4">
+                  <p className="font-semibold">
+                    Necesitás iniciar sesión
+                    para reservar.
+                  </p>
 
-                <p className="mt-1 text-sm text-gray-400">
-                  Tu reserva quedará asociada a tu
-                  cuenta.
-                </p>
+                  <p className="mt-1 text-sm text-gray-400">
+                    Tu reserva quedará
+                    asociada a tu cuenta.
+                  </p>
 
-                <button
-                  onClick={abrirLogin}
-                  type="button"
-                  className="mt-3 text-sm font-bold text-[#e71921] transition hover:text-red-400"
-                >
-                  Iniciar sesión →
-                </button>
-              </div>
-            )}
+                  <button
+                    onClick={abrirLogin}
+                    type="button"
+                    className="mt-3 text-sm font-bold text-[#e71921] transition hover:text-red-400"
+                  >
+                    Iniciar sesión →
+                  </button>
+                </div>
+              )}
 
             {/* SESIÓN ACTIVA */}
-            {!loadingSession && session?.user && (
-              <div className="mb-6 rounded-xl border border-green-500/20 bg-green-500/5 p-4">
-                <p className="text-sm text-green-300">
-                  Sesión iniciada como{" "}
-                  <span className="font-bold">
-                    {session.user.email}
-                  </span>
-                </p>
-              </div>
-            )}
+            {!loadingSession &&
+              session?.user && (
+                <div className="mb-6 rounded-xl border border-green-500/20 bg-green-500/5 p-4">
+                  <p className="text-sm text-green-300">
+                    Sesión iniciada como{" "}
+                    <span className="font-bold">
+                      {session.user.email}
+                    </span>
+                  </p>
+                </div>
+              )}
 
             <form
               onSubmit={guardarReserva}
@@ -438,29 +526,46 @@ export default function Reservas() {
                     value={form.hora}
                     onChange={handleChange}
                     required
-                    disabled={!form.sucursal || !form.fecha || availableTimes.length === 0}
+                    disabled={
+                      !form.sucursal ||
+                      !form.fecha ||
+                      availableTimes.length === 0
+                    }
                     className="w-full rounded-xl border border-white/10 bg-[#090909] px-4 py-3.5 text-white outline-none transition focus:border-[#e71921]"
                   >
                     <option value="">
-                      {!form.sucursal || !form.fecha
+                      {!form.sucursal ||
+                      !form.fecha
                         ? "Elegí sucursal y fecha"
-                        : availableTimes.length === 0
+                        : availableTimes.length ===
+                            0
                           ? "No hay horarios disponibles"
                           : "Seleccionar horario"}
                     </option>
 
-                    {availableTimes.map((time) => (
-                      <option key={time} value={time}>
-                        {time}
-                      </option>
-                    ))}
+                    {availableTimes.map(
+                      (time) => (
+                        <option
+                          key={time}
+                          value={time}
+                        >
+                          {time}
+                        </option>
+                      )
+                    )}
                   </select>
 
-                  {form.sucursal && form.fecha && (
-                    <p className="mt-2 text-xs font-semibold leading-5 text-gray-500">
-                      Horarios de atención: {getScheduleDescription(form.sucursal, form.fecha)}.
-                    </p>
-                  )}
+                  {form.sucursal &&
+                    form.fecha && (
+                      <p className="mt-2 text-xs font-semibold leading-5 text-gray-500">
+                        Horarios de atención:{" "}
+                        {getScheduleDescription(
+                          form.sucursal,
+                          form.fecha
+                        )}
+                        .
+                      </p>
+                    )}
                 </div>
               </div>
 
@@ -482,8 +587,9 @@ export default function Reservas() {
                 {masDe50 && (
                   <div className="mt-3 rounded-xl border border-[#e71921]/20 bg-[#e71921]/10 p-4">
                     <p className="text-sm font-semibold text-[#e71921]">
-                      Para grupos de más de 50 personas
-                      coordinamos directamente por
+                      Para grupos de más de
+                      50 personas coordinamos
+                      directamente por
                       WhatsApp.
                     </p>
                   </div>
@@ -520,7 +626,14 @@ export default function Reservas() {
               {/* ÉXITO */}
               {mensaje && (
                 <div className="rounded-xl border border-green-500/20 bg-green-500/10 p-4 text-sm text-green-300">
-                  {mensaje}
+                  <p>{mensaje}</p>
+
+                  <a
+                    href="/mis-solicitudes"
+                    className="mt-3 inline-block font-black text-green-200 underline underline-offset-4"
+                  >
+                    Ver mis solicitudes →
+                  </a>
                 </div>
               )}
 
@@ -552,11 +665,55 @@ export default function Reservas() {
 
       <Footer />
 
+      <ConfirmRequestModal
+        open={confirmOpen}
+        title="Confirmar reserva"
+        description="Revisá los datos antes de enviar la reserva a Jalu."
+        confirmLabel="Sí, confirmar reserva"
+        loading={enviando}
+        onCancel={() =>
+          setConfirmOpen(false)
+        }
+        onConfirm={confirmarReserva}
+        fields={[
+          {
+            label: "Nombre",
+            value: form.nombre,
+          },
+          {
+            label: "Teléfono",
+            value: form.telefono,
+          },
+          {
+            label: "Sucursal",
+            value: form.sucursal,
+          },
+          {
+            label: "Fecha",
+            value: form.fecha,
+          },
+          {
+            label: "Hora",
+            value: form.hora,
+          },
+          {
+            label: "Personas",
+            value: form.personas,
+          },
+          {
+            label: "Comentarios",
+            value: form.comentarios,
+          },
+        ]}
+      />
+
       <AuthModal
         open={authOpen}
         mode={authMode}
         setMode={setAuthMode}
-        onClose={() => setAuthOpen(false)}
+        onClose={() =>
+          setAuthOpen(false)
+        }
         onSuccess={async () => {
           setAuthOpen(false);
           await cargarSesion();
