@@ -3,9 +3,14 @@ import { panelConfigs } from "../data/adminData.js";
 import {
   AdminSection,
   DetailCard,
+  DoubleConfirmModal,
   PageShell,
 } from "../components/AdminUi.jsx";
 import { supabase } from "../../supabase.js";
+import {
+  activityRangeBounds,
+  useActivityDate,
+} from "../components/ActivityDateFilter.jsx";
 
 function formatDate(value) {
   if (!value) return "—";
@@ -33,15 +38,18 @@ export default function Orders({
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState(null);
+  const [cancelCandidate, setCancelCandidate] = useState(null);
   const [error, setError] = useState("");
+  const [activityDate] = useActivityDate();
 
   useEffect(() => {
-    cargarPedidos();
-  }, []);
+    cargarPedidos(activityDate);
+  }, [activityDate]);
 
-  async function cargarPedidos() {
+  async function cargarPedidos(date = activityDate) {
     setLoading(true);
     setError("");
+    const { start, end } = activityRangeBounds("day", date);
 
     const { data, error: queryError } =
       await supabase
@@ -49,6 +57,8 @@ export default function Orders({
         .select("*")
         .neq("estado", "finalizado")
         .neq("estado", "cancelado")
+        .gte("created_at", start)
+        .lt("created_at", end)
         .order("created_at", {
           ascending: false,
         });
@@ -135,15 +145,41 @@ export default function Orders({
     setUpdatingId(null);
   }
 
+  async function cancelarPedido(order) {
+    setUpdatingId(order.id);
+    setError("");
+
+    const { data: { session } } = await supabase.auth.getSession();
+    const { error: updateError } = await supabase
+      .from("pedidos")
+      .update({
+        estado: "cancelado",
+        cancelado_at: new Date().toISOString(),
+        cancelado_por: session?.user?.email || "Personal Jalu",
+      })
+      .eq("id", order.id);
+
+    if (updateError) {
+      console.error("Error cancelando pedido:", updateError);
+      setError("No se pudo cancelar el pedido.");
+      setUpdatingId(null);
+      return;
+    }
+
+    setOrders((current) => current.filter((item) => item.id !== order.id));
+    setCancelCandidate(null);
+    setUpdatingId(null);
+  }
+
   return (
     <PageShell
       eyebrow="Pedidos"
-      title="Pedidos activos"
-      description="Confirmá pedidos, revisá todos sus datos y finalizalos cuando hayan sido entregados."
+      title="Pedidos del día"
+      description="Acá se muestran los pedidos recibidos hoy. Al finalizar el turno, marcá cada pedido como finalizado para guardarlo en el historial."
     >
       <AdminSection
         eyebrow={config.label}
-        title={`Cola de pedidos (${orders.length})`}
+        title={`Pedidos de hoy (${orders.length})`}
         action={
           loading
             ? "Actualizando..."
@@ -216,6 +252,13 @@ export default function Orders({
               });
             }
 
+            actions.push({
+              label: "Cancelar pedido",
+              onClick: () => setCancelCandidate(order),
+              disabled: isUpdating,
+              variant: "danger",
+            });
+
             return (
               <DetailCard
                 key={order.id}
@@ -279,6 +322,17 @@ export default function Orders({
           })}
         </div>
       </AdminSection>
+
+      {cancelCandidate && (
+        <DoubleConfirmModal
+          key={cancelCandidate.id}
+          title={`¿Cancelar el pedido de ${cancelCandidate.nombre || "este cliente"}?`}
+          description="El pedido dejará la lista activa y quedará guardado en la pestaña Cancelados."
+          onClose={() => setCancelCandidate(null)}
+          onConfirm={() => cancelarPedido(cancelCandidate)}
+          isProcessing={updatingId === cancelCandidate.id}
+        />
+      )}
     </PageShell>
   );
 }

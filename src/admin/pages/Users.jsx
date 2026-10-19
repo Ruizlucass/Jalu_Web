@@ -6,7 +6,7 @@ import { panelConfigs } from "../data/adminData.js";
 import { normalizeProfile, queryProfiles } from "../utils/userProfiles.js";
 
 const statusFilters = [
-  { value: "todos", label: "Ambos" },
+  { value: "todos", label: "Todos" },
   { value: "activo", label: "Activos" },
   { value: "inactivo", label: "Inactivos" },
 ];
@@ -16,16 +16,37 @@ export default function Users({ panelType = "superadmin" }) {
   const [profiles, setProfiles] = useState([]);
   const [roles, setRoles] = useState([]);
   const [currentUserId, setCurrentUserId] = useState("");
-  const [statusFilter, setStatusFilter] = useState("todos");
+  const [statusFilter, setStatusFilter] = useState("activo");
   const [savingUserId, setSavingUserId] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [lastActivityByUser, setLastActivityByUser] = useState({});
+  const [now, setNow] = useState(() => Date.now());
   const canManageRoles = panelType === "superadmin";
 
   const normalizedUsers = useMemo(
-    () => profiles.map(normalizeProfile),
-    [profiles]
+    () => profiles.map((profile) => {
+      const user = normalizeProfile(profile);
+      const lastActivityAt = lastActivityByUser[user.id] || null;
+      const activityOrSignupTime = lastActivityAt || profile.created_at;
+      const activityTime = activityOrSignupTime
+        ? new Date(activityOrSignupTime).getTime()
+        : null;
+      const inactiveByAge =
+        activityTime !== null &&
+        now - activityTime > 30 * 24 * 60 * 60 * 1000;
+
+      return {
+        ...user,
+        lastActivityAt,
+        status:
+          user.status === "Inactivo" || inactiveByAge
+            ? "Inactivo"
+            : "Activo",
+      };
+    }),
+    [profiles, lastActivityByUser, now]
   );
 
   const visibleUsers = useMemo(() => {
@@ -46,10 +67,24 @@ export default function Users({ panelType = "superadmin" }) {
     try {
       const [
         profilesResult,
+        ordersResult,
+        reservationsResult,
         rolesResult,
         sessionResult,
       ] = await Promise.all([
         queryProfiles(),
+        supabase
+          .from("pedidos")
+          .select("user_id, created_at")
+          .not("user_id", "is", null)
+          .gte("created_at", new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("reservas")
+          .select("user_id, created_at")
+          .not("user_id", "is", null)
+          .gte("created_at", new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
+          .order("created_at", { ascending: false }),
         canManageRoles
           ? supabase
               .from("roles")
@@ -63,11 +98,33 @@ export default function Users({ panelType = "superadmin" }) {
         throw profilesResult.error;
       }
 
+      if (ordersResult.error) {
+        throw ordersResult.error;
+      }
+
+      if (reservationsResult.error) {
+        throw reservationsResult.error;
+      }
+
       if (rolesResult.error) {
         throw rolesResult.error;
       }
 
+      const activityByUser = {};
+      [...(ordersResult.data || []), ...(reservationsResult.data || [])]
+        .forEach(({ user_id: userId, created_at: createdAt }) => {
+          if (
+            userId &&
+            createdAt &&
+            (!activityByUser[userId] ||
+              new Date(createdAt) > new Date(activityByUser[userId]))
+          ) {
+            activityByUser[userId] = createdAt;
+          }
+        });
+
       setProfiles(profilesResult.data || []);
+      setLastActivityByUser(activityByUser);
       setRoles(rolesResult.data || []);
       setCurrentUserId(
         sessionResult.data?.session?.user?.id || ""
@@ -137,11 +194,16 @@ export default function Users({ panelType = "superadmin" }) {
     loadUsers();
   }, []);
 
+  useEffect(() => {
+    const interval = window.setInterval(() => setNow(Date.now()), 60_000);
+    return () => window.clearInterval(interval);
+  }, []);
+
   return (
     <PageShell
       eyebrow="Usuarios"
       title="Usuarios"
-      description="Vista del superadmin para revisar cuentas registradas y cambiar roles."
+      description="El estado se calcula con la última actividad registrada en pedidos o reservas: después de 30 días sin actividad, el usuario figura como inactivo."
     >
       <AdminSection
         eyebrow={config.label}
@@ -205,6 +267,7 @@ export default function Users({ panelType = "superadmin" }) {
                 currentUserId={currentUserId}
                 savingUserId={savingUserId}
                 onRoleChange={updateUserRole}
+                lastActivityAt={user.lastActivityAt}
               />
             ) : (
               <DataRow
@@ -227,6 +290,7 @@ function UserManagementRow({
   currentUserId,
   savingUserId,
   onRoleChange,
+  lastActivityAt,
 }) {
   const isCurrentUser = user.id === currentUserId;
   const isSaving = savingUserId === user.id;
@@ -249,6 +313,11 @@ function UserManagementRow({
         </p>
         <p className="mt-1 truncate text-xs font-bold text-gray-500">
           {user.email}
+        </p>
+        <p className="mt-1 text-xs font-bold text-gray-500">
+          {lastActivityAt
+            ? `Último pedido o reserva: ${formatActivityDate(lastActivityAt)}`
+            : "Sin pedidos ni reservas en los últimos 30 días"}
         </p>
       </div>
 
@@ -278,6 +347,14 @@ function UserManagementRow({
       </select>
     </article>
   );
+}
+
+function formatActivityDate(value) {
+  if (!value) return "sin actividad registrada";
+  return new Intl.DateTimeFormat("es-AR", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(value));
 }
 
 function UserStatusBadge({ status }) {

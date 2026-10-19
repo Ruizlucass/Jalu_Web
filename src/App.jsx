@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import Home from "./pages/Home.jsx";
 import Menu from "./pages/Menu.jsx";
 import Pedidos from "./pages/Pedidos.jsx";
@@ -23,8 +24,34 @@ import Unavailable from "./admin/pages/Unavailable.jsx";
 import AdminProtected from "./admin/AdminProtected.jsx";
 
 export default function App() {
-  const pathname =
+  const actualPathname =
     window.location.pathname.replace(/\/$/, "") || "/";
+  const routeBase = actualPathname.startsWith("/superadmin")
+    ? "/superadmin"
+    : actualPathname.startsWith("/admin")
+      ? "/admin"
+      : null;
+  const savedPanelPath = window.history.state?.panelPath;
+  const savedPathMatchesBase =
+    routeBase &&
+    typeof savedPanelPath === "string" &&
+    (savedPanelPath === routeBase || savedPanelPath.startsWith(`${routeBase}/`));
+  const pathname =
+    actualPathname === routeBase && savedPathMatchesBase
+      ? savedPanelPath.replace(/\/$/, "") || routeBase
+      : actualPathname;
+
+  useEffect(() => {
+    if (!routeBase) return;
+
+    if (window.location.pathname !== routeBase) {
+      window.history.replaceState(
+        { ...window.history.state, panelPath: pathname },
+        "",
+        routeBase
+      );
+    }
+  }, [pathname, routeBase]);
 
   // =========================
   // SUPERADMIN
@@ -34,7 +61,7 @@ export default function App() {
 
     return (
       <AdminProtected allowedRoles={["superadmin"]}>
-        <AdminLayout panelType="superadmin">
+        <AdminLayout panelType="superadmin" currentPathname={pathname}>
           {page}
         </AdminLayout>
       </AdminProtected>
@@ -49,7 +76,7 @@ export default function App() {
 
     return (
       <AdminProtected allowedRoles={["admin", "superadmin"]}>
-        <AdminLayout panelType="admin">
+        <AdminLayout panelType="admin" currentPathname={pathname}>
           {page}
         </AdminLayout>
       </AdminProtected>

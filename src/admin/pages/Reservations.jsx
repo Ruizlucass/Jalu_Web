@@ -1,7 +1,16 @@
 import { useEffect, useState } from "react";
 import { panelConfigs } from "../data/adminData.js";
-import { AdminSection, DetailCard, PageShell } from "../components/AdminUi.jsx";
+import {
+  AdminSection,
+  DetailCard,
+  DoubleConfirmModal,
+  PageShell,
+} from "../components/AdminUi.jsx";
 import { supabase } from "../../supabase.js";
+import {
+  activityRangeBounds,
+  useActivityDate,
+} from "../components/ActivityDateFilter.jsx";
 
 function formatCreatedAt(value) {
   if (!value) return "—";
@@ -24,31 +33,56 @@ export default function Reservations({ panelType = "admin" }) {
   const [reservations, setReservations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState(null);
+  const [cancelCandidate, setCancelCandidate] = useState(null);
   const [error, setError] = useState("");
+  const [activityDate] = useActivityDate();
 
   useEffect(() => {
-    cargarReservas();
-  }, []);
+    cargarReservas(activityDate);
+  }, [activityDate]);
 
-  async function cargarReservas() {
+  async function cargarReservas(date = activityDate) {
     setLoading(true);
     setError("");
 
-    const { data, error: queryError } = await supabase
-      .from("reservas")
-      .select("*")
-      .neq("estado", "finalizado")
-      .order("fecha", { ascending: true })
-      .order("hora", { ascending: true });
+    const { start, end, startDate, endDate } = activityRangeBounds("day", date);
+    const [createdTodayResult, scheduledTodayResult] = await Promise.all([
+      supabase
+        .from("reservas")
+        .select("*")
+        .neq("estado", "finalizado")
+        .neq("estado", "cancelado")
+        .gte("created_at", start)
+        .lt("created_at", end),
+      supabase
+        .from("reservas")
+        .select("*")
+        .neq("estado", "finalizado")
+        .neq("estado", "cancelado")
+        .gte("fecha", startDate)
+        .lt("fecha", endDate),
+    ]);
 
-    if (queryError) {
-      console.error("Error cargando reservas:", queryError);
+    if (createdTodayResult.error || scheduledTodayResult.error) {
+      console.error(
+        "Error cargando reservas:",
+        createdTodayResult.error || scheduledTodayResult.error
+      );
       setError("No se pudieron cargar las reservas.");
       setLoading(false);
       return;
     }
 
-    setReservations(data || []);
+    const uniqueReservations = new Map();
+    [...(createdTodayResult.data || []), ...(scheduledTodayResult.data || [])]
+      .forEach((reservation) => uniqueReservations.set(reservation.id, reservation));
+
+    setReservations(
+      [...uniqueReservations.values()].sort((a, b) => {
+        const dateComparison = String(a.fecha || "").localeCompare(String(b.fecha || ""));
+        return dateComparison || String(a.hora || "").localeCompare(String(b.hora || ""));
+      })
+    );
     setLoading(false);
   }
 
@@ -94,15 +128,41 @@ export default function Reservations({ panelType = "admin" }) {
     setUpdatingId(null);
   }
 
+  async function cancelarReserva(reservation) {
+    setUpdatingId(reservation.id);
+    setError("");
+
+    const { data: { session } } = await supabase.auth.getSession();
+    const { error: updateError } = await supabase
+      .from("reservas")
+      .update({
+        estado: "cancelado",
+        cancelado_at: new Date().toISOString(),
+        cancelado_por: session?.user?.email || "Personal Jalu",
+      })
+      .eq("id", reservation.id);
+
+    if (updateError) {
+      console.error("Error cancelando reserva:", updateError);
+      setError("No se pudo cancelar la reserva.");
+      setUpdatingId(null);
+      return;
+    }
+
+    setReservations((current) => current.filter((item) => item.id !== reservation.id));
+    setCancelCandidate(null);
+    setUpdatingId(null);
+  }
+
   return (
     <PageShell
       eyebrow="Reservas"
-      title="Reservas activas"
-      description="Revisá fecha, horario, cantidad de personas y comentarios antes de confirmar cada reserva."
+      title="Reservas del día"
+      description="Se muestran las reservas recibidas hoy y las programadas para hoy. Al finalizar el turno, marcá las atendidas como finalizadas para guardarlas en el historial."
     >
       <AdminSection
         eyebrow={config.label}
-        title={`Reservas pendientes y confirmadas (${reservations.length})`}
+        title={`Reservas de hoy (${reservations.length})`}
         action={loading ? "Actualizando..." : "Actualizar"}
         onAction={cargarReservas}
         actionDisabled={loading}
@@ -144,6 +204,13 @@ export default function Reservations({ panelType = "admin" }) {
               });
             }
 
+            actions.push({
+              label: "Cancelar reserva",
+              onClick: () => setCancelCandidate(reservation),
+              disabled: isUpdating,
+              variant: "danger",
+            });
+
             return (
               <DetailCard
                 key={reservation.id}
@@ -169,6 +236,17 @@ export default function Reservations({ panelType = "admin" }) {
           })}
         </div>
       </AdminSection>
+
+      {cancelCandidate && (
+        <DoubleConfirmModal
+          key={cancelCandidate.id}
+          title={`¿Cancelar la reserva de ${cancelCandidate.nombre || "este cliente"}?`}
+          description="La reserva dejará la lista activa y quedará guardada en la pestaña Cancelados."
+          onClose={() => setCancelCandidate(null)}
+          onConfirm={() => cancelarReserva(cancelCandidate)}
+          isProcessing={updatingId === cancelCandidate.id}
+        />
+      )}
     </PageShell>
   );
 }

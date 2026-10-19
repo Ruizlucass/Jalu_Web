@@ -64,6 +64,25 @@ export function getTodayInTucuman(date = new Date()) {
   return `${parts.year}-${parts.month}-${parts.day}`;
 }
 
+export function getMaxReservationDate(date = new Date()) {
+  const [year, month, day] = getTodayInTucuman(date)
+    .split("-")
+    .map(Number);
+  const targetMonthIndex = month - 1 + 3;
+  const targetYear = year + Math.floor(targetMonthIndex / 12);
+  const normalizedMonth = targetMonthIndex % 12;
+  const lastDayOfTargetMonth = new Date(
+    targetYear,
+    normalizedMonth + 1,
+    0
+  ).getDate();
+  const targetDay = Math.min(day, lastDayOfTargetMonth);
+
+  return `${targetYear}-${String(normalizedMonth + 1).padStart(2, "0")}-${String(
+    targetDay
+  ).padStart(2, "0")}`;
+}
+
 function nowMinutesInTucuman(date = new Date()) {
   const parts = tucumanNowParts(date);
   return Number(parts.hour) * 60 + Number(parts.minute);
@@ -142,6 +161,10 @@ export function validateReservationDateTime({
 
   if (date < today) {
     return "No podés seleccionar una fecha anterior a hoy.";
+  }
+
+  if (date > getMaxReservationDate(now)) {
+    return "Las reservas se pueden realizar con hasta 3 meses de anticipación.";
   }
 
   const availableTimes = getAvailableReservationTimes(branch, date, now);

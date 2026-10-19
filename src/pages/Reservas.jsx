@@ -13,6 +13,7 @@ import { supabase } from "../supabase";
 
 import {
   getAvailableReservationTimes,
+  getMaxReservationDate,
   getScheduleDescription,
   getTodayInTucuman,
   validateReservationDateTime,
@@ -53,6 +54,12 @@ export default function Reservas() {
     hora: "",
     comentarios: "",
   });
+  const [displayedMonth, setDisplayedMonth] = useState(() =>
+    getTodayInTucuman().slice(0, 7)
+  );
+
+  const minReservationDate = getTodayInTucuman();
+  const maxReservationDate = getMaxReservationDate();
 
   const availableTimes = useMemo(
     () =>
@@ -118,6 +125,26 @@ export default function Reservas() {
       }),
     }));
 
+    setError("");
+    setMensaje("");
+  }
+
+  function handleMonthChange(month) {
+    setDisplayedMonth(month);
+    setForm((actual) => ({ ...actual, fecha: "", hora: "" }));
+    setError("");
+    setMensaje("");
+  }
+
+  function handleDateSelection(date) {
+    setDisplayedMonth(date.slice(0, 7));
+    setForm((actual) => ({ ...actual, fecha: date, hora: "" }));
+    setError("");
+    setMensaje("");
+  }
+
+  function handleTimeSelection(time) {
+    setForm((actual) => ({ ...actual, hora: time }));
     setError("");
     setMensaje("");
   }
@@ -259,6 +286,7 @@ export default function Reservas() {
         hora: "",
         comentarios: "",
       });
+      setDisplayedMonth(getTodayInTucuman().slice(0, 7));
     } catch (unexpectedError) {
       console.error(
         "Error inesperado registrando reserva:",
@@ -505,15 +533,17 @@ export default function Reservas() {
                     Fecha
                   </label>
 
-                  <input
-                    type="date"
-                    name="fecha"
-                    min={getTodayInTucuman()}
+                  <ReservationDatePicker
                     value={form.fecha}
-                    onChange={handleChange}
-                    required
-                    className="w-full rounded-xl border border-white/10 bg-[#090909] px-4 py-3.5 text-white outline-none transition focus:border-[#e71921]"
+                    month={displayedMonth}
+                    minDate={minReservationDate}
+                    maxDate={maxReservationDate}
+                    onMonthChange={handleMonthChange}
+                    onDateSelect={handleDateSelection}
                   />
+                  <p className="mt-2 text-xs font-semibold text-gray-500">
+                    Podés reservar hasta {formatDateLong(maxReservationDate)}.
+                  </p>
                 </div>
 
                 <div>
@@ -521,39 +551,37 @@ export default function Reservas() {
                     Hora
                   </label>
 
-                  <select
-                    name="hora"
-                    value={form.hora}
-                    onChange={handleChange}
-                    required
-                    disabled={
-                      !form.sucursal ||
-                      !form.fecha ||
-                      availableTimes.length === 0
-                    }
-                    className="w-full rounded-xl border border-white/10 bg-[#090909] px-4 py-3.5 text-white outline-none transition focus:border-[#e71921]"
-                  >
-                    <option value="">
-                      {!form.sucursal ||
-                      !form.fecha
-                        ? "Elegí sucursal y fecha"
-                        : availableTimes.length ===
-                            0
-                          ? "No hay horarios disponibles"
-                          : "Seleccionar horario"}
-                    </option>
-
-                    {availableTimes.map(
-                      (time) => (
-                        <option
+                  {!form.sucursal || !form.fecha ? (
+                    <p className="rounded-xl border border-white/10 bg-[#090909] px-4 py-3.5 text-sm text-gray-500">
+                      Elegí una sucursal y una fecha para ver los horarios.
+                    </p>
+                  ) : availableTimes.length === 0 ? (
+                    <p className="rounded-xl border border-white/10 bg-[#090909] px-4 py-3.5 text-sm text-gray-500">
+                      No quedan horarios disponibles para esta fecha.
+                    </p>
+                  ) : (
+                    <div
+                      className="grid grid-cols-3 gap-2"
+                      role="group"
+                      aria-label="Horarios disponibles"
+                    >
+                      {availableTimes.map((time) => (
+                        <button
                           key={time}
-                          value={time}
+                          type="button"
+                          aria-pressed={form.hora === time}
+                          onClick={() => handleTimeSelection(time)}
+                          className={`min-h-11 rounded-xl border px-3 text-sm font-bold transition ${
+                            form.hora === time
+                              ? "border-[#e71921] bg-[#e71921] text-white shadow-[0_8px_20px_rgba(231,25,33,0.18)]"
+                              : "border-white/10 bg-[#090909] text-gray-300 hover:border-[#e71921]/60 hover:bg-[#e71921]/10 hover:text-white"
+                          }`}
                         >
                           {time}
-                        </option>
-                      )
-                    )}
-                  </select>
+                        </button>
+                      ))}
+                    </div>
+                  )}
 
                   {form.sucursal &&
                     form.fecha && (
@@ -721,4 +749,119 @@ export default function Reservas() {
       />
     </>
   );
+}
+
+function ReservationDatePicker({
+  value,
+  month,
+  minDate,
+  maxDate,
+  onMonthChange,
+  onDateSelect,
+}) {
+  const months = getReservationMonths(minDate, maxDate);
+  const [year, monthNumber] = month.split("-").map(Number);
+  const firstWeekday = (new Date(year, monthNumber - 1, 1).getDay() + 6) % 7;
+  const daysInMonth = new Date(year, monthNumber, 0).getDate();
+  const weekdays = ["Lu", "Ma", "Mi", "Ju", "Vi", "Sá", "Do"];
+
+  return (
+    <div className="rounded-xl border border-white/10 bg-[#090909] p-4">
+      <div className="mb-4 flex items-center gap-3">
+        <label className="sr-only" htmlFor="reservation-month">
+          Mes de la reserva
+        </label>
+        <select
+          id="reservation-month"
+          value={month}
+          onChange={(event) => onMonthChange(event.target.value)}
+          className="min-h-11 min-w-0 flex-1 rounded-lg border border-white/10 bg-[#151515] px-3 text-sm font-bold capitalize text-white outline-none focus:border-[#e71921]"
+        >
+          {months.map((item) => (
+            <option key={item.value} value={item.value}>
+              {item.label}
+            </option>
+          ))}
+        </select>
+        <span
+          aria-label={`Año ${year}, fijo`}
+          className="grid min-h-11 min-w-16 place-items-center rounded-lg border border-white/5 bg-white/[0.03] px-3 text-sm font-black text-gray-400"
+        >
+          {year}
+        </span>
+      </div>
+
+      <div className="grid grid-cols-7 gap-1.5 text-center">
+        {weekdays.map((weekday) => (
+          <span
+            key={weekday}
+            className="grid h-9 place-items-center text-xs font-black text-gray-500"
+          >
+            {weekday}
+          </span>
+        ))}
+
+        {Array.from({ length: firstWeekday }, (_, index) => (
+          <span key={`empty-${index}`} aria-hidden="true" className="h-10" />
+        ))}
+
+        {Array.from({ length: daysInMonth }, (_, index) => {
+          const day = index + 1;
+          const date = `${month}-${String(day).padStart(2, "0")}`;
+          const isDisabled = date < minDate || date > maxDate;
+          const isSelected = value === date;
+
+          return (
+            <button
+              key={date}
+              type="button"
+              aria-label={formatDateLong(date)}
+              aria-pressed={isSelected}
+              disabled={isDisabled}
+              onClick={() => onDateSelect(date)}
+              className={`h-10 rounded-lg text-sm font-bold transition disabled:cursor-not-allowed disabled:text-gray-700 ${
+                isSelected
+                  ? "bg-[#e71921] text-white shadow-[0_6px_16px_rgba(231,25,33,0.22)]"
+                  : isDisabled
+                    ? "text-gray-700"
+                    : "text-gray-300 hover:bg-white/[0.08] hover:text-white"
+              }`}
+            >
+              {day}
+            </button>
+          );
+        })}
+      </div>
+
+      <p className="mt-3 min-h-5 text-xs font-semibold text-gray-500" aria-live="polite">
+        {value ? `Fecha seleccionada: ${formatDateLong(value)}` : "Elegí un día disponible."}
+      </p>
+    </div>
+  );
+}
+
+function getReservationMonths(minDate, maxDate) {
+  const [startYear, startMonth] = minDate.split("-").map(Number);
+  const [endYear, endMonth] = maxDate.split("-").map(Number);
+  const start = new Date(startYear, startMonth - 1, 1, 12);
+  const end = new Date(endYear, endMonth - 1, 1, 12);
+  const months = [];
+
+  for (const current = new Date(start); current <= end; current.setMonth(current.getMonth() + 1)) {
+    const monthValue = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, "0")}`;
+    const monthLabel = new Intl.DateTimeFormat("es-AR", {
+      month: "long",
+    }).format(current);
+
+    months.push({ value: monthValue, label: monthLabel });
+  }
+
+  return months;
+}
+
+function formatDateLong(value) {
+  const [year, month, day] = value.split("-").map(Number);
+  return new Intl.DateTimeFormat("es-AR", {
+    dateStyle: "long",
+  }).format(new Date(year, month - 1, day, 12));
 }

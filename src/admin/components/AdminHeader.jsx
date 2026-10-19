@@ -3,7 +3,7 @@ import { FaBars, FaTimes } from "react-icons/fa";
 import { supabase } from "../../supabase.js";
 import { getUserInitials } from "../../utils/authProfile.js";
 
-export default function AdminHeader({ config }) {
+export default function AdminHeader({ config, currentPathname }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [user, setUser] = useState(null);
 
@@ -92,7 +92,7 @@ export default function AdminHeader({ config }) {
       {menuOpen && (
         <nav
           id="admin-header-menu"
-          className="grid gap-2 border-t border-white/10 bg-[#0b0b0b] px-4 py-3 lg:hidden"
+          className="grid gap-2 border-t border-white/[0.07] bg-[#0b0b0b] px-4 py-4 lg:hidden"
           aria-label={`${config.title} mobile`}
         >
           {config.links.map((link) => (
@@ -100,6 +100,7 @@ export default function AdminHeader({ config }) {
               key={link.href}
               {...link}
               basePath={config.basePath}
+              currentPathname={currentPathname}
               onClick={() => setMenuOpen(false)}
             />
           ))}
@@ -109,8 +110,8 @@ export default function AdminHeader({ config }) {
   );
 }
 
-function MobileMenuLink({ href, label, basePath, onClick }) {
-  const currentPath = window.location.pathname.replace(/\/$/, "") || "/";
+function MobileMenuLink({ href, label, basePath, currentPathname, onClick }) {
+  const currentPath = currentPathname || window.location.pathname.replace(/\/$/, "") || "/";
   const normalizedHref = href.replace(/\/$/, "") || "/";
   const isActive =
     normalizedHref === basePath
@@ -120,14 +121,31 @@ function MobileMenuLink({ href, label, basePath, onClick }) {
   return (
     <a
       href={href}
-      onClick={onClick}
-      className={`block rounded-lg border px-4 py-3 text-sm font-black uppercase transition ${
+      onClick={(event) => {
+        if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+          onClick();
+          return;
+        }
+        onClick();
+        if (href === window.location.pathname) {
+          event.preventDefault();
+          window.history.replaceState(
+            { ...window.history.state, panelPath: href },
+            "",
+            window.location.pathname
+          );
+          window.location.reload();
+        }
+      }}
+      aria-current={isActive ? "page" : undefined}
+      className={`flex min-h-12 items-center justify-between rounded-xl px-4 py-3 text-sm font-bold transition ${
         isActive
-          ? "border-[#e71921] bg-[#e71921] text-white shadow-[0_14px_32px_rgba(231,25,33,0.2)]"
-          : "border-white/10 bg-white/[0.04] text-[#b9b9b9] hover:border-[#e71921]/50 hover:text-white"
+          ? "bg-[#e71921]/[0.13] text-white shadow-[inset_0_0_0_1px_rgba(231,25,33,0.2)]"
+          : "bg-white/[0.025] text-[#999999] hover:bg-white/[0.07] hover:text-white"
       }`}
     >
       {label}
+      {isActive && <span className="size-1.5 rounded-full bg-[#ff555b]" />}
     </a>
   );
 }

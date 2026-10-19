@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 export function PageShell({ eyebrow, title, description, children }) {
   return (
     <div className="mx-auto grid w-full max-w-[1440px] gap-6 p-4 sm:p-6 xl:p-8">
@@ -94,6 +96,7 @@ const statusClasses = {
   pendiente: "border-amber-400/30 bg-amber-400/10 text-amber-300",
   confirmado: "border-sky-400/30 bg-sky-400/10 text-sky-300",
   finalizado: "border-emerald-400/30 bg-emerald-400/10 text-emerald-300",
+  cancelado: "border-red-400/30 bg-red-400/10 text-red-300",
 };
 
 export function StatusBadge({ status = "pendiente" }) {
@@ -169,7 +172,9 @@ export function DetailCard({
               onClick={onClick}
               disabled={disabled}
               className={`min-h-10 rounded-lg border px-4 text-xs font-black uppercase transition disabled:cursor-not-allowed disabled:opacity-50 ${
-                variant === "success"
+                variant === "danger"
+                  ? "border-red-500/40 bg-red-500/10 text-red-300 hover:bg-red-500/20"
+                  : variant === "success"
                   ? "border-emerald-500 bg-emerald-500 text-black hover:bg-emerald-400"
                   : "border-[#e71921] bg-[#e71921] text-white hover:bg-[#ff2a33]"
               }`}
@@ -180,5 +185,61 @@ export function DetailCard({
         </div>
       )}
     </article>
+  );
+}
+
+export function DoubleConfirmModal({
+  title,
+  description,
+  onClose,
+  onConfirm,
+  isProcessing = false,
+}) {
+  const [step, setStep] = useState(1);
+
+  return (
+    <div className="fixed inset-0 z-[210] flex items-center justify-center bg-black/80 px-4 backdrop-blur-sm">
+      <section
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="double-confirm-title"
+        className="w-full max-w-md rounded-2xl border border-white/10 bg-[#151515] p-6 shadow-2xl sm:p-7"
+      >
+        <p className="text-xs font-black uppercase tracking-[0.2em] text-red-400">
+          Confirmación {step} de 2
+        </p>
+        <h2 id="double-confirm-title" className="mt-3 text-xl font-black text-white">
+          {step === 1 ? title : "Confirmar definitivamente"}
+        </h2>
+        <p className="mt-3 text-sm leading-6 text-[#b9b9b9]">
+          {step === 1
+            ? description
+            : "El registro quedará marcado como cancelado y se conservará en el historial."}
+        </p>
+
+        <div className="mt-6 grid grid-cols-2 gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={isProcessing}
+            className="min-h-11 rounded-xl border border-white/10 px-4 text-sm font-bold text-[#ccc] transition hover:bg-white/[0.05] disabled:opacity-50"
+          >
+            Volver
+          </button>
+          <button
+            type="button"
+            onClick={() => (step === 1 ? setStep(2) : onConfirm())}
+            disabled={isProcessing}
+            className="min-h-11 rounded-xl border border-red-500/40 bg-red-500/15 px-4 text-sm font-black text-red-200 transition hover:bg-red-500/25 disabled:opacity-50"
+          >
+            {isProcessing
+              ? "Cancelando..."
+              : step === 1
+                ? "Continuar"
+                : "Sí, cancelar"}
+          </button>
+        </div>
+      </section>
+    </div>
   );
 }
