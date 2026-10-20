@@ -13,7 +13,19 @@
 
 .app {
   min-height: 100vh;
+  overflow-x: clip;
   background: linear-gradient(180deg, rgba(0, 0, 0, 0.2), #080808 680px), #080808;
+}
+
+#root,
+main {
+  min-width: 0;
+}
+
+img,
+video,
+canvas {
+  max-width: 100%;
 }
 
 .section {
@@ -241,6 +253,22 @@ p {
 
   .eyebrow {
     min-width: 112px;
+  }
+
+  .section {
+    padding-right: 16px;
+    padding-left: 16px;
+  }
+}
+
+@media (max-width: 380px) {
+  .eyebrow {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .panel-title {
+    font-size: clamp(1.5rem, 8vw, 1.8rem);
   }
 }
 

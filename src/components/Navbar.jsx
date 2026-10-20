@@ -173,7 +173,7 @@ export default function Navbar() {
   return (
     <>
       <header className="fixed inset-x-0 top-0 z-20 border-b border-white/10 bg-[#080808]/85 backdrop-blur-2xl">
-        <div className="flex items-center justify-between gap-3 px-4 py-2.5 min-[960px]:px-[52px]">
+        <div className="mx-auto grid w-full max-w-[1600px] grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 px-4 py-2.5 sm:px-6 min-[1280px]:px-8">
 
           {/* LOGO */}
           <a
@@ -191,7 +191,7 @@ export default function Navbar() {
 
           {/* NAVEGACIÓN DESKTOP */}
           <nav
-            className="hidden items-center gap-5 text-[0.9rem] font-extrabold text-[#b9b9b9] min-[960px]:flex"
+            className="col-start-2 hidden items-center justify-self-center gap-4 text-[0.86rem] font-extrabold text-[#b9b9b9] min-[1280px]:flex min-[1440px]:gap-5 min-[1440px]:text-[0.9rem]"
             aria-label="Principal"
           >
             {!isHome && (
@@ -234,13 +234,6 @@ export default function Navbar() {
 
             <a
               className={navLink}
-              href="/club-jalu"
-            >
-              Club Jalu
-            </a>
-
-            <a
-              className={navLink}
               href="/sobre-nosotros"
             >
               Sobre nosotros
@@ -248,7 +241,7 @@ export default function Navbar() {
           </nav>
 
           {/* USUARIO DESKTOP */}
-          <div className="hidden gap-2 min-[960px]:flex">
+          <div className="col-start-3 hidden justify-self-end gap-2 min-[1280px]:flex">
             {user ? (
               <>
                 <span
@@ -320,7 +313,7 @@ export default function Navbar() {
           </div>
 
           {/* MOBILE HEADER */}
-          <div className="ml-auto flex items-center gap-3 min-[960px]:hidden">
+          <div className="col-start-3 flex items-center justify-self-end gap-2 min-[1280px]:hidden">
             {user && (
               <span
                 className={initialsBadge}
@@ -332,7 +325,7 @@ export default function Navbar() {
             )}
 
             <button
-              className="relative top-1 z-30 grid h-10 w-10 place-items-center rounded-md border border-white/10 text-white transition hover:border-white/25 hover:bg-white/10"
+              className="relative z-30 grid h-10 w-10 place-items-center rounded-md border border-white/10 text-white transition hover:border-white/25 hover:bg-white/10"
               type="button"
               aria-label={
                 isMenuOpen
@@ -381,10 +374,10 @@ export default function Navbar() {
         {/* MENÚ MOBILE */}
         <div
           id="mobile-menu"
-          className={`overflow-hidden border-t border-white/10 bg-[#080808]/95 px-4 transition-all duration-300 min-[960px]:hidden ${
+          className={`overflow-y-auto border-t border-white/10 bg-[#080808]/95 px-4 transition-all duration-300 min-[1280px]:hidden ${
             isMenuOpen
-              ? "max-h-[650px] opacity-100"
-              : "max-h-0 opacity-0"
+              ? "max-h-[calc(100dvh-4rem)] opacity-100"
+              : "max-h-0 overflow-hidden opacity-0"
           }`}
         >
           <nav
@@ -431,14 +424,6 @@ export default function Navbar() {
               onClick={closeMenu}
             >
               Reservas
-            </a>
-
-            <a
-              className={navLink}
-              href="/club-jalu"
-              onClick={closeMenu}
-            >
-              Club Jalu
             </a>
 
             <a

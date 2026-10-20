@@ -6,7 +6,6 @@ import Register from "../pages/Register.jsx";
 import Reservas from "../pages/Reservas.jsx";
 import SobreNosotros from "../pages/SobreNosotros.jsx";
 import ArabeLibre from "../pages/ArabeLibre.jsx";
-import ClubJalu from "../pages/ClubJalu.jsx";
 
 export const routes = [
   {
@@ -23,11 +22,6 @@ export const routes = [
     path: "/arabe-libre",
     label: "Árabe Libre",
     component: ArabeLibre,
-  },
-  {
-    path: "/club-jalu",
-    label: "Club Jalu",
-    component: ClubJalu,
   },
   {
     path: "/login",

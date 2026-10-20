@@ -182,6 +182,10 @@ export default function MenuProducts({ panelType = "admin" }) {
         throw new Error("Ingresá el nombre del plato.");
       }
 
+      if (!form.descripcion.trim()) {
+        throw new Error("Ingresá una descripción para el plato.");
+      }
+
       if (!Number.isFinite(price) || price < 0) {
         throw new Error("Ingresá un precio válido.");
       }
@@ -369,7 +373,7 @@ export default function MenuProducts({ panelType = "admin" }) {
               </label>
 
               <label className="grid gap-2 text-xs font-black uppercase text-gray-400">
-                Descripción
+                Descripción *
                 <textarea
                   className={`${inputClass} min-h-28 resize-y`}
                   value={form.descripcion}
@@ -381,6 +385,7 @@ export default function MenuProducts({ panelType = "admin" }) {
                   }
                   placeholder="Contá qué incluye el plato..."
                   maxLength={500}
+                  required
                 />
               </label>
 

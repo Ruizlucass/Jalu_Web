@@ -1,4 +1,5 @@
 import Button from "./Button.jsx";
+import { FaUtensils } from "react-icons/fa";
 import { products, quickLinks, whatsappBase } from "../utils/siteData.js";
 import { trackEvent } from "../helpers/tracking.js";
 
@@ -20,7 +21,19 @@ export function QuickAccess() {
 export function ProductCard({ product }) {
   return (
     <article className="product-card">
-      <div className="product-image" style={{ backgroundImage: `url(${product.image})` }} />
+      <div
+        className={`product-image ${product.image ? "" : "product-image-empty"}`}
+        style={product.image ? { backgroundImage: `url(${product.image})` } : undefined}
+        role={product.image ? "img" : undefined}
+        aria-label={product.image ? product.name : undefined}
+      >
+        {!product.image && (
+          <div className="product-image-placeholder" aria-hidden="true">
+            <FaUtensils />
+            <span>Preparado en Jalu</span>
+          </div>
+        )}
+      </div>
       <div className="product-body">
         <div className="product-top">
           <h3>{product.name}</h3>

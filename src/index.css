@@ -9,16 +9,30 @@ html {
 }
 
 body {
+  min-width: 320px;
   margin: 0;
   font-family: Inter, Arial, sans-serif;
   background: #080808;
   color: #fff;
 }
 
+html,
+body {
+  max-width: 100%;
+  overflow-x: clip;
+}
+
 button,
 input,
-select {
+select,
+textarea {
   font: inherit;
+}
+
+input,
+select,
+textarea {
+  max-width: 100%;
 }
 
 a {

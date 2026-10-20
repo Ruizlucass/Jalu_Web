@@ -9,19 +9,19 @@ export default function SobreNosotros() {
     <main className="min-h-screen bg-[#080808] text-white">
       <Navbar />
 
-      <section className="relative flex min-h-[62vh] items-center justify-center overflow-hidden px-6 pt-24 text-center">
+      <section className="relative flex min-h-[62vh] flex-col items-center justify-center overflow-hidden px-6 pt-24 text-center">
         <div className="absolute inset-0 bg-gradient-to-b from-[#e71921]/12 via-transparent to-[#080808]" />
 
-        <div className="relative z-10 mx-auto max-w-4xl">
+        <div className="relative z-10 mx-auto flex w-full max-w-4xl flex-col items-center text-center">
           <span className="mb-5 inline-block text-sm font-black uppercase tracking-[0.35em] text-[#e71921]">
             Sobre nosotros
           </span>
 
-          <h1 className="text-5xl font-black uppercase leading-none sm:text-6xl md:text-8xl">
+          <h1 className="w-full text-center text-5xl font-black uppercase leading-none sm:text-6xl md:text-8xl">
             Sabor arabe con identidad tucumana
           </h1>
 
-          <p className="mx-auto mt-7 max-w-2xl text-base font-bold leading-7 text-gray-300 sm:text-lg">
+          <p className="mx-auto mt-7 w-full max-w-2xl text-center text-base font-bold leading-7 text-gray-300 sm:text-lg">
             Jalu nacio como una cocina familiar dedicada a compartir recetas arabes
             simples, abundantes y llenas de caracter. Hoy seguimos preparando cada
             plato con la misma idea: comida honesta, buen producto y un servicio

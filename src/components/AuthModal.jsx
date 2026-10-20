@@ -38,10 +38,10 @@ export default function AuthModal({
       />
 
       
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-3 sm:p-4">
         <div
           onClick={(e) => e.stopPropagation()}
-          className="relative w-full max-w-md rounded-2xl border border-[#e71921]/25 bg-[#121212] p-8 shadow-[0_24px_70px_rgba(0,0,0,0.55),0_0_45px_rgba(231,25,33,0.14)] animate-[fadeIn_.25s_ease]"
+          className="relative my-auto max-h-[calc(100dvh-1.5rem)] w-full max-w-md overflow-y-auto rounded-2xl border border-[#e71921]/25 bg-[#121212] p-5 shadow-[0_24px_70px_rgba(0,0,0,0.55),0_0_45px_rgba(231,25,33,0.14)] animate-[fadeIn_.25s_ease] sm:max-h-[calc(100dvh-2rem)] sm:p-8"
         >
          
           <button
@@ -54,7 +54,7 @@ export default function AuthModal({
           </button>
 
          
-          <h2 className="mb-6 text-center text-3xl font-black text-white">
+          <h2 className="mb-6 pr-8 text-center text-2xl font-black text-white sm:text-3xl">
             {mode === "login"
               ? "Iniciar sesión"
               : "Crear cuenta"}

@@ -26,7 +26,7 @@ const sectionIcons = {
 
 export default function AdminSidebar({ config, currentPathname }) {
   return (
-    <aside className="hidden min-h-screen w-[292px] shrink-0 flex-col border-r border-white/[0.07] bg-gradient-to-b from-[#111111] via-[#0b0b0b] to-[#080808] p-5 lg:flex">
+    <aside className="sticky top-0 hidden h-screen w-[272px] shrink-0 flex-col overflow-y-auto border-r border-white/[0.07] bg-gradient-to-b from-[#111111] via-[#0b0b0b] to-[#080808] p-5 xl:flex 2xl:w-[292px]">
       <a
         href="/"
         className="mb-9 flex min-h-16 items-center rounded-2xl border border-white/[0.06] bg-white/[0.025] px-4 transition hover:border-white/10 hover:bg-white/[0.045]"

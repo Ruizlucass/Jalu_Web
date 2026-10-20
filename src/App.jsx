@@ -7,7 +7,6 @@ import SobreNosotros from "./pages/SobreNosotros.jsx";
 import Login from "./pages/Login.jsx";
 import Register from "./pages/Register.jsx";
 import ArabeLibre from "./pages/ArabeLibre.jsx";
-import ClubJalu from "./pages/ClubJalu.jsx";
 import MisSolicitudes from "./pages/MisSolicitudes.jsx";
 
 import AdminLayout from "./admin/AdminLayout.jsx";
@@ -93,10 +92,6 @@ export default function App() {
 
   if (pathname === "/arabe-libre") {
     return <ArabeLibre />;
-  }
-
-  if (pathname === "/club-jalu") {
-    return <ClubJalu />;
   }
 
   if (pathname === "/pedidos") {

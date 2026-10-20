@@ -7,7 +7,7 @@ export default function AdminLayout({ panelType = "admin", currentPathname, chil
 
   return (
     <main className="min-h-screen bg-[#080808] text-white">
-      <div className="lg:flex lg:min-h-screen">
+      <div className="xl:flex xl:min-h-screen">
         <AdminSidebar config={config} currentPathname={currentPathname} />
 
         <div className="min-w-0 flex-1">

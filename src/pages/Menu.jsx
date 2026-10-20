@@ -10,6 +10,9 @@ export default function Menu() {
     console.log("SE CARGO MENU JSX");
   const [active, setActive] = useState("Combos");
   const [products, setProducts] = useState([]);
+  const [offers, setOffers] = useState([]);
+  const [offersLoading, setOffersLoading] = useState(true);
+  const [offersLoadError, setOffersLoadError] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
 
@@ -71,6 +74,42 @@ export default function Menu() {
     loadProducts();
   }, [loadProducts]);
 
+  useEffect(() => {
+    let mounted = true;
+    const now = new Date().toISOString();
+
+    async function loadOffers() {
+      try {
+        const { data, error } = await supabase
+          .from("promociones")
+          .select("id, titulo, descripcion, tipo_descuento, valor_descuento, fecha_fin, aplica_todas_sucursales, sucursales_aplicables")
+          .eq("activa", true)
+          .lte("fecha_inicio", now)
+          .gt("fecha_fin", now)
+          .order("fecha_fin", { ascending: true });
+
+        if (error) throw error;
+        if (mounted) {
+          setOffers(data || []);
+          setOffersLoadError(false);
+        }
+      } catch (error) {
+        console.error("Error cargando ofertas vigentes:", error);
+        if (mounted) {
+          setOffers([]);
+          setOffersLoadError(true);
+        }
+      } finally {
+        if (mounted) setOffersLoading(false);
+      }
+    }
+
+    loadOffers();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   // Categorías existentes más las que agregue el administrador.
   const categories = useMemo(() => {
     const databaseCategories = products
@@ -128,6 +167,98 @@ export default function Menu() {
         </div>
       </section>
 
+      {/* OFERTAS VIGENTES */}
+      <section
+        id="ofertas"
+        aria-labelledby="ofertas-title"
+        className="mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 sm:py-16"
+      >
+        <div className="mb-8 text-center">
+          <span className="text-sm font-black uppercase tracking-[0.3em] text-[#e71921]">
+            Elegí algo especial
+          </span>
+          <h2 id="ofertas-title" className="mt-3 text-3xl font-black uppercase sm:text-4xl md:text-5xl">
+            Ofertas vigentes
+          </h2>
+          <p className="mx-auto mt-4 max-w-xl text-sm leading-6 text-gray-400">
+            Aprovechá nuestras promociones mientras estén disponibles.
+          </p>
+        </div>
+
+        {offersLoading ? (
+          <p className="py-6 text-center text-sm font-bold text-gray-400" role="status">
+            Buscando ofertas vigentes...
+          </p>
+        ) : offers.length > 0 ? (
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {offers.map((offer) => {
+              const discount = Number(offer.valor_descuento) || 0;
+              const discountLabel = offer.tipo_descuento === "monto_fijo"
+                ? `${new Intl.NumberFormat("es-AR", {
+                    style: "currency",
+                    currency: "ARS",
+                    maximumFractionDigits: 2,
+                }).format(discount)} OFF`
+                : `${new Intl.NumberFormat("es-AR", { maximumFractionDigits: 2 }).format(discount)}% OFF`;
+
+              return (
+                <article
+                  key={offer.id}
+                  className="flex min-w-0 flex-col justify-between gap-5 overflow-hidden rounded-2xl border border-[#e71921]/30 bg-gradient-to-br from-[#251012] via-[#151010] to-[#101010] p-5 shadow-[0_18px_45px_rgba(0,0,0,0.25)] sm:p-6"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <span className="inline-flex rounded-full border border-[#e71921]/30 bg-[#e71921]/10 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-[#ff7378]">
+                        Oferta por tiempo limitado
+                      </span>
+                      <h3 className="mt-4 break-words text-xl font-black uppercase text-white sm:text-2xl">
+                        {offer.titulo}
+                      </h3>
+                    </div>
+                    <strong className="shrink-0 rounded-xl bg-[#e71921] px-3 py-2 text-lg font-black text-white sm:text-xl">
+                      {discountLabel}
+                    </strong>
+                  </div>
+
+                  <p className="min-h-10 whitespace-pre-wrap break-words text-sm leading-6 text-gray-300">
+                    {offer.descripcion || "Consultá por esta promoción al realizar tu pedido."}
+                  </p>
+
+                  <p className="text-xs font-bold text-gray-400">
+                    Aplica en: {offer.aplica_todas_sucursales === false
+                      ? (offer.sucursales_aplicables || []).join(", ")
+                      : "todas las sucursales"}
+                  </p>
+
+                  <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-4">
+                    <p className="text-xs font-bold text-gray-400">
+                      Vigente hasta {new Intl.DateTimeFormat("es-AR", {
+                        dateStyle: "medium",
+                        timeStyle: "short",
+                      }).format(new Date(offer.fecha_fin))}
+                    </p>
+                    <a
+                      href="/pedidos"
+                      className="inline-flex min-h-10 items-center justify-center rounded-lg bg-white px-4 text-xs font-black uppercase text-[#111] transition hover:bg-gray-200"
+                    >
+                      Hacer un pedido
+                    </a>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        ) : offersLoadError ? (
+          <p className="rounded-xl border border-amber-500/25 bg-amber-500/[0.06] px-5 py-8 text-center text-sm font-bold text-amber-200" role="status">
+            No pudimos cargar las ofertas en este momento.
+          </p>
+        ) : (
+          <p className="rounded-xl border border-white/10 bg-white/[0.03] px-5 py-8 text-center text-sm font-bold text-gray-400">
+            En este momento no hay ofertas vigentes. Volvé pronto para conocer las próximas promociones.
+          </p>
+        )}
+      </section>
+
       {/* PRODUCTOS */}
       <section className="mx-auto max-w-7xl px-6 py-16">
         <div className="mb-10 text-center">
@@ -139,9 +270,6 @@ export default function Menu() {
             Nuestra carta
           </h2>
 
-          <p className="mx-auto mt-4 max-w-xl text-sm leading-6 text-gray-400">
-            Platos preparados para compartir, disfrutar y volver a elegir.
-          </p>
         </div>
 
         {loading ? (

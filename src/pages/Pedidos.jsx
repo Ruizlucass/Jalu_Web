@@ -5,6 +5,23 @@ import AuthModal from "../components/AuthModal";
 import ConfirmRequestModal from "../components/ConfirmRequestModal.jsx";
 import { supabase } from "../supabase";
 
+const ORDER_OBSERVATIONS = [
+  "Sin cebolla",
+  "Sin salsa",
+  "Sin picante",
+  "Agregar cubiertos",
+  "Tocar timbre",
+  "Llamar al llegar",
+];
+
+function formatMoney(value) {
+  return new Intl.NumberFormat("es-AR", {
+    style: "currency",
+    currency: "ARS",
+    maximumFractionDigits: 2,
+  }).format(Number(value) || 0);
+}
+
 export default function Pedidos() {
   const [session, setSession] = useState(null);
   const [loadingSession, setLoadingSession] = useState(true);
@@ -16,6 +33,15 @@ export default function Pedidos() {
   const [mensaje, setMensaje] = useState("");
   const [error, setError] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [menuProducts, setMenuProducts] = useState([]);
+  const [menuLoading, setMenuLoading] = useState(true);
+  const [menuError, setMenuError] = useState("");
+  const [offers, setOffers] = useState([]);
+  const [offersLoading, setOffersLoading] = useState(true);
+  const [offersError, setOffersError] = useState(false);
+  const [cart, setCart] = useState({});
+  const [selectedOfferId, setSelectedOfferId] = useState("");
+  const [observations, setObservations] = useState([]);
 
   const [form, setForm] = useState({
     nombre: "",
@@ -23,8 +49,6 @@ export default function Pedidos() {
     sucursal: "",
     tipo_entrega: "retiro",
     direccion: "",
-    descripcion: "",
-    observaciones: "",
   });
 
   useEffect(() => {
@@ -38,10 +62,59 @@ export default function Pedidos() {
       }
     );
 
+    cargarProductos();
+    cargarOfertas();
+
     return () => {
       subscription.unsubscribe();
     };
   }, []);
+
+  async function cargarProductos() {
+    setMenuLoading(true);
+    setMenuError("");
+    try {
+      const { data, error: productsError } = await supabase
+        .from("menu_productos")
+        .select("id, nombre, descripcion, precio, categoria, disponible")
+        .eq("disponible", true)
+        .order("categoria", { ascending: true })
+        .order("nombre", { ascending: true });
+
+      if (productsError) throw productsError;
+      setMenuProducts(data || []);
+    } catch (productsError) {
+      console.error("Error cargando productos para el pedido:", productsError);
+      setMenuError("No pudimos cargar el menú. Actualizá la página o intentá nuevamente.");
+      setMenuProducts([]);
+    } finally {
+      setMenuLoading(false);
+    }
+  }
+
+  async function cargarOfertas() {
+    setOffersLoading(true);
+    const now = new Date().toISOString();
+    try {
+      const { data, error: offersQueryError } = await supabase
+        .from("promociones")
+        .select("id, titulo, descripcion, tipo_descuento, valor_descuento, aplica_todas_sucursales, sucursales_aplicables")
+        .eq("activa", true)
+        .lte("fecha_inicio", now)
+        .gt("fecha_fin", now)
+        .order("fecha_fin", { ascending: true });
+
+      if (offersQueryError) throw offersQueryError;
+      setOffers(data || []);
+      setOffersError(false);
+    } catch (offersQueryError) {
+      console.error("Error cargando ofertas para el pedido:", offersQueryError);
+      setOffers([]);
+      setOffersError(true);
+    } finally {
+      setOffersLoading(false);
+    }
+  }
 
   async function cargarSesion() {
     const {
@@ -51,6 +124,40 @@ export default function Pedidos() {
     setSession(session);
     setLoadingSession(false);
   }
+
+  const cartItems = menuProducts
+    .filter((product) => Number(cart[product.id]) > 0)
+    .map((product) => ({
+      ...product,
+      cantidad: Number(cart[product.id]),
+      importe: Number(product.precio) * Number(cart[product.id]),
+    }));
+  const subtotal = cartItems.reduce((sum, item) => sum + item.importe, 0);
+  const selectedBranch = form.sucursal === "Otra"
+    ? "Otra sucursal"
+    : form.sucursal;
+  const applicableOffers = form.sucursal
+    ? offers.filter((offer) =>
+        offer.aplica_todas_sucursales !== false ||
+        (offer.sucursales_aplicables || []).includes(selectedBranch)
+      )
+    : [];
+  const selectedOffer = applicableOffers.find(
+    (offer) => String(offer.id) === String(selectedOfferId)
+  );
+  const offerDiscount = selectedOffer
+    ? selectedOffer.tipo_descuento === "monto_fijo"
+      ? Math.min(subtotal, Number(selectedOffer.valor_descuento) || 0)
+      : subtotal * (Number(selectedOffer.valor_descuento) || 0) / 100
+    : 0;
+  const total = Math.max(0, subtotal - offerDiscount);
+  const orderDescription = [
+    ...cartItems.map((item) => `${item.cantidad} x ${item.nombre} — ${formatMoney(item.precio)} c/u`),
+    selectedOffer ? `Oferta aplicada: ${selectedOffer.titulo} (-${formatMoney(offerDiscount)})` : "",
+    `Subtotal: ${formatMoney(subtotal)}`,
+    offerDiscount > 0 ? `Descuento: -${formatMoney(offerDiscount)}` : "",
+    `Total: ${formatMoney(total)}`,
+  ].filter(Boolean).join("\n");
 
   function handleChange(e) {
     const { name, value } = e.target;
@@ -62,6 +169,30 @@ export default function Pedidos() {
 
     setError("");
     setMensaje("");
+    if (name === "sucursal") setSelectedOfferId("");
+  }
+
+  function actualizarCantidad(productId, difference) {
+    setCart((current) => {
+      const nextQuantity = Math.max(0, Number(current[productId] || 0) + difference);
+      if (nextQuantity === 0) {
+        const nextCart = { ...current };
+        delete nextCart[productId];
+        return nextCart;
+      }
+      return { ...current, [productId]: nextQuantity };
+    });
+    setError("");
+  }
+
+  function toggleObservation(observation) {
+    setObservations((current) => current.includes(observation)
+      ? current.filter((item) => item !== observation)
+      : current.length < 3
+        ? [...current, observation]
+        : current
+    );
+    setError("");
   }
 
   function abrirLogin() {
@@ -83,12 +214,16 @@ export default function Pedidos() {
     if (
       !form.nombre.trim() ||
       !form.telefono.trim() ||
-      !form.sucursal ||
-      !form.descripcion.trim()
+      !form.sucursal
     ) {
       setError(
         "Completá todos los campos obligatorios."
       );
+      return;
+    }
+
+    if (cartItems.length === 0) {
+      setError("Agregá al menos un producto del menú al pedido.");
       return;
     }
 
@@ -136,14 +271,11 @@ export default function Pedidos() {
                 ? form.direccion.trim()
                 : null,
 
-            descripcion:
-              form.descripcion.trim(),
+            descripcion: orderDescription,
 
-            observaciones:
-              form.observaciones.trim() ||
-              null,
+            observaciones: observations.join(", ") || null,
 
-            total: 0,
+            total,
 
             estado: "pendiente",
           });
@@ -173,9 +305,10 @@ export default function Pedidos() {
         sucursal: "",
         tipo_entrega: "retiro",
         direccion: "",
-        descripcion: "",
-        observaciones: "",
       });
+      setCart({});
+      setSelectedOfferId("");
+      setObservations([]);
     } catch (unexpectedError) {
       console.error(
         "Error inesperado registrando pedido:",
@@ -309,8 +442,8 @@ export default function Pedidos() {
                 {[
                   ["01", "Iniciá sesión"],
                   ["02", "Elegí una sucursal"],
-                  ["03", "Delivery o Take Away"],
-                  ["04", "Confirmá tu pedido"],
+                  ["03", "Elegí los platos del menú"],
+                  ["04", "Aplicá una oferta y confirmá"],
                 ].map(([numero, texto]) => (
                   <div
                     key={numero}
@@ -327,18 +460,6 @@ export default function Pedidos() {
                 ))}
               </div>
 
-              <div className="mt-8 rounded-2xl border border-[#e71921]/20 bg-[#e71921]/5 p-5">
-                <p className="font-bold">
-                  Próximamente
-                </p>
-
-                <p className="mt-2 text-sm leading-6 text-gray-400">
-                  Vamos a conectar el menú directamente
-                  con esta sección para que puedas
-                  agregar productos a un carrito y
-                  calcular automáticamente el total.
-                </p>
-              </div>
             </div>
 
             {/* FORMULARIO */}
@@ -512,46 +633,186 @@ export default function Pedidos() {
                   </div>
                 )}
 
-                <div>
-                  <label className="mb-2 block text-sm font-semibold text-gray-300">
-                    Descripción del pedido
-                  </label>
+                <section className="space-y-4 rounded-2xl border border-white/10 bg-[#090909] p-4 sm:p-5">
+                  <div className="flex flex-wrap items-end justify-between gap-2">
+                    <div>
+                      <p className="text-sm font-semibold text-gray-200">
+                        Elegí tus platos *
+                      </p>
+                      <p className="mt-1 text-xs text-gray-500">
+                        Productos disponibles publicados en el menú.
+                      </p>
+                    </div>
+                    <a href="/menu" className="text-xs font-bold text-[#ff5b62] hover:text-white">
+                      Ver menú completo
+                    </a>
+                  </div>
 
-                  <textarea
-                    name="descripcion"
-                    value={form.descripcion}
-                    onChange={handleChange}
-                    rows="4"
-                    required
-                    placeholder="Ej: 2 shawarmas completos, 6 sfijas y una gaseosa..."
-                    className="w-full resize-none rounded-xl border border-white/10 bg-[#090909] px-4 py-3.5 outline-none transition focus:border-[#e71921]"
-                  />
+                  {menuLoading ? (
+                    <p className="py-6 text-center text-sm text-gray-400" role="status">
+                      Cargando menú...
+                    </p>
+                  ) : menuError ? (
+                    <div role="alert" className="rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-200">
+                      {menuError}
+                      <button type="button" onClick={cargarProductos} className="ml-2 font-black underline">
+                        Reintentar
+                      </button>
+                    </div>
+                  ) : menuProducts.length === 0 ? (
+                    <p className="rounded-xl border border-white/10 p-4 text-sm text-gray-400">
+                      No hay platos disponibles en este momento.
+                    </p>
+                  ) : (
+                    <div className="max-h-[380px] space-y-2 overflow-y-auto pr-1">
+                      {menuProducts.map((product) => {
+                        const quantity = Number(cart[product.id] || 0);
+                        return (
+                          <article key={product.id} className="grid min-w-0 gap-3 rounded-xl border border-white/10 bg-white/[0.025] p-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+                            <div className="min-w-0">
+                              <p className="break-words text-sm font-black text-white">
+                                {product.nombre}
+                              </p>
+                              <p className="mt-1 text-xs font-bold text-gray-500">
+                                {product.categoria} · {formatMoney(product.precio)}
+                              </p>
+                              {product.descripcion && (
+                                <p className="mt-1 break-words text-xs leading-5 text-gray-400">
+                                  {product.descripcion}
+                                </p>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2 sm:justify-self-end">
+                              {quantity > 0 && (
+                                <>
+                                  <button
+                                    type="button"
+                                    aria-label={`Quitar una unidad de ${product.nombre}`}
+                                    onClick={() => actualizarCantidad(product.id, -1)}
+                                    className="grid h-9 w-9 place-items-center rounded-full border border-white/15 text-lg font-black text-white hover:border-[#e71921]"
+                                  >
+                                    −
+                                  </button>
+                                  <span className="min-w-6 text-center text-sm font-black">{quantity}</span>
+                                </>
+                              )}
+                              <button
+                                type="button"
+                                aria-label={quantity ? `Agregar otra unidad de ${product.nombre}` : `Agregar ${product.nombre}`}
+                                onClick={() => actualizarCantidad(product.id, 1)}
+                                className="min-h-9 rounded-full bg-[#e71921] px-4 text-xs font-black uppercase text-white transition hover:bg-[#ff3038]"
+                              >
+                                {quantity > 0 ? "Agregar +" : "Agregar"}
+                              </button>
+                            </div>
+                          </article>
+                        );
+                      })}
+                    </div>
+                  )}
 
-                  <p className="mt-2 text-xs leading-5 text-gray-500">
-                    Escribí qué productos querés pedir.
-                    Este detalle se verá completo en el
-                    panel.
-                  </p>
-                </div>
+                  {cartItems.length > 0 && (
+                    <div className="space-y-2 border-t border-white/10 pt-4">
+                      <p className="text-xs font-black uppercase tracking-wider text-gray-400">
+                        Tu pedido ({cartItems.reduce((sum, item) => sum + item.cantidad, 0)} productos)
+                      </p>
+                      {cartItems.map((item) => (
+                        <div key={item.id} className="flex justify-between gap-3 text-sm">
+                          <span className="min-w-0 break-words text-gray-300">{item.cantidad} × {item.nombre}</span>
+                          <span className="shrink-0 font-bold text-white">{formatMoney(item.importe)}</span>
+                        </div>
+                      ))}
+                      <div className="flex justify-between border-t border-white/10 pt-3 text-sm font-black">
+                        <span>Subtotal</span>
+                        <span>{formatMoney(subtotal)}</span>
+                      </div>
+                    </div>
+                  )}
 
-                <div>
-                  <label className="mb-2 block text-sm font-semibold text-gray-300">
-                    Observaciones
-                    <span className="font-normal text-gray-500">
-                      {" "}
-                      (opcional)
-                    </span>
-                  </label>
+                  <div className="space-y-2 border-t border-white/10 pt-4">
+                    <p className="text-sm font-semibold text-gray-200">Ofertas vigentes</p>
+                    {!form.sucursal ? (
+                      <p className="text-xs text-gray-500">Elegí una sucursal para ver las ofertas aplicables.</p>
+                    ) : offersLoading ? (
+                      <p className="text-xs text-gray-500">Buscando ofertas...</p>
+                    ) : offersError ? (
+                      <p className="text-xs text-amber-300">No pudimos cargar las ofertas. Podés continuar con el pedido sin aplicar una promoción.</p>
+                    ) : applicableOffers.length === 0 ? (
+                      <p className="text-xs text-gray-500">No hay ofertas vigentes para esta sucursal.</p>
+                    ) : (
+                      <div className="grid gap-2">
+                        <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-white/10 bg-white/[0.025] p-3 text-sm">
+                          <input
+                            type="radio"
+                            name="pedido-oferta"
+                            checked={!selectedOfferId}
+                            onChange={() => setSelectedOfferId("")}
+                            className="mt-1 accent-[#e71921]"
+                          />
+                          <span>Sin oferta</span>
+                        </label>
+                        {applicableOffers.map((offer) => (
+                          <label key={offer.id} className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3 text-sm transition ${
+                            String(selectedOfferId) === String(offer.id)
+                              ? "border-[#e71921]/60 bg-[#e71921]/10"
+                              : "border-white/10 bg-white/[0.025] hover:border-white/20"
+                          }`}>
+                            <input
+                              type="radio"
+                              name="pedido-oferta"
+                              checked={String(selectedOfferId) === String(offer.id)}
+                              onChange={() => setSelectedOfferId(String(offer.id))}
+                              className="mt-1 accent-[#e71921]"
+                            />
+                            <span className="min-w-0">
+                              <span className="block font-black text-white">
+                                {offer.titulo} · {offer.tipo_descuento === "monto_fijo"
+                                  ? formatMoney(offer.valor_descuento)
+                                  : `${Number(offer.valor_descuento)}%`} de descuento
+                              </span>
+                              {offer.descripcion && <span className="mt-1 block text-xs leading-5 text-gray-400">{offer.descripcion}</span>}
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
 
-                  <textarea
-                    name="observaciones"
-                    value={form.observaciones}
-                    onChange={handleChange}
-                    rows="4"
-                    placeholder="Ej: tocar timbre, sin cebolla, aclaraciones del pedido..."
-                    className="w-full resize-none rounded-xl border border-white/10 bg-[#090909] px-4 py-3.5 outline-none transition focus:border-[#e71921]"
-                  />
-                </div>
+                  {cartItems.length > 0 && (
+                    <div className="flex justify-between rounded-xl border border-[#e71921]/30 bg-[#e71921]/10 p-4 text-base font-black">
+                      <span>Total</span>
+                      <span>{formatMoney(total)}</span>
+                    </div>
+                  )}
+                </section>
+
+                <fieldset className="space-y-3">
+                  <legend className="mb-2 text-sm font-semibold text-gray-200">
+                    Observaciones (opcional, hasta 3)
+                  </legend>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {ORDER_OBSERVATIONS.map((observation) => {
+                      const checked = observations.includes(observation);
+                      const limitReached = observations.length >= 3 && !checked;
+                      return (
+                        <label key={observation} className={`flex min-h-11 cursor-pointer items-center gap-3 rounded-xl border px-3 py-2 text-sm transition ${
+                          checked
+                            ? "border-[#e71921]/50 bg-[#e71921]/10 text-white"
+                            : "border-white/10 bg-[#090909] text-gray-300 hover:border-white/20"
+                        } ${limitReached ? "cursor-not-allowed opacity-50" : ""}`}>
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            disabled={limitReached}
+                            onChange={() => toggleObservation(observation)}
+                            className="h-4 w-4 accent-[#e71921]"
+                          />
+                          {observation}
+                        </label>
+                      );
+                    })}
+                  </div>
+                </fieldset>
 
                 {error && (
                   <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-300">
@@ -670,11 +931,15 @@ export default function Pedidos() {
           },
           {
             label: "Pedido",
-            value: form.descripcion,
+            value: orderDescription,
           },
           {
             label: "Observaciones",
-            value: form.observaciones,
+            value: observations.join(", ") || "Sin observaciones",
+          },
+          {
+            label: "Total",
+            value: formatMoney(total),
           },
         ]}
       />
