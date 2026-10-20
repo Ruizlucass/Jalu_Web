@@ -2,14 +2,14 @@ import { useState } from "react";
 
 export function PageShell({ eyebrow, title, description, children }) {
   return (
-    <div className="mx-auto grid w-full max-w-[1440px] gap-6 p-4 sm:p-6 xl:p-8">
-      <section>
+    <div className="mx-auto grid min-w-0 w-full max-w-[1440px] grid-cols-1 gap-5 p-3 sm:gap-6 sm:p-6 xl:p-8">
+      <section className="min-w-0">
         <span className="eyebrow">{eyebrow}</span>
-        <h1 className="mt-4 text-3xl font-black uppercase leading-none text-white sm:text-4xl">
+        <h1 className="mt-4 break-words text-3xl font-black uppercase leading-none text-white sm:text-4xl">
           {title}
         </h1>
         {description && (
-          <p className="mt-3 max-w-2xl text-sm font-bold leading-6 text-[#b9b9b9] sm:text-base">
+          <p className="mt-3 max-w-2xl break-words text-sm font-bold leading-6 text-[#b9b9b9] sm:text-base">
             {description}
           </p>
         )}
@@ -29,7 +29,7 @@ export function AdminSection({
   children,
 }) {
   return (
-    <section className="rounded-lg border border-white/10 bg-[#151515] p-5 shadow-[0_24px_70px_rgba(0,0,0,0.34)] sm:p-6">
+    <section className="min-w-0 rounded-lg border border-white/10 bg-[#151515] p-4 shadow-[0_24px_70px_rgba(0,0,0,0.34)] sm:p-6">
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-xs font-black uppercase tracking-[0.25em] text-[#e71921]">
@@ -79,7 +79,7 @@ export function DataRow({ title, meta, status }) {
         : "border-white/10 bg-[#0f0f0f] text-[#b9b9b9]";
 
   return (
-    <article className="grid gap-3 rounded-lg border border-white/5 bg-white/[0.03] p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+    <article className="grid min-w-0 gap-3 rounded-lg border border-white/5 bg-white/[0.03] p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
       <div className="min-w-0">
         <p className="truncate font-black text-white">{title}</p>
         <p className="mt-1 truncate text-xs font-bold text-gray-500">{meta}</p>
@@ -124,7 +124,7 @@ export function DetailCard({
   actions = [],
 }) {
   return (
-    <article className="rounded-xl border border-white/10 bg-white/[0.03] p-5 shadow-[0_16px_45px_rgba(0,0,0,0.18)]">
+    <article className="min-w-0 rounded-xl border border-white/10 bg-white/[0.03] p-4 shadow-[0_16px_45px_rgba(0,0,0,0.18)] sm:p-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <h3 className="break-words text-lg font-black text-white">{title}</h3>
@@ -198,12 +198,12 @@ export function DoubleConfirmModal({
   const [step, setStep] = useState(1);
 
   return (
-    <div className="fixed inset-0 z-[210] flex items-center justify-center bg-black/80 px-4 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[210] flex items-start justify-center overflow-y-auto bg-black/80 px-4 py-4 backdrop-blur-sm sm:items-center sm:py-6">
       <section
         role="dialog"
         aria-modal="true"
         aria-labelledby="double-confirm-title"
-        className="w-full max-w-md rounded-2xl border border-white/10 bg-[#151515] p-6 shadow-2xl sm:p-7"
+        className="my-auto max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-2xl border border-white/10 bg-[#151515] p-5 shadow-2xl sm:max-h-[calc(100dvh-3rem)] sm:p-7"
       >
         <p className="text-xs font-black uppercase tracking-[0.2em] text-red-400">
           Confirmación {step} de 2

@@ -6,7 +6,7 @@ export default function AdminLayout({ panelType = "admin", currentPathname, chil
   const config = panelConfigs[panelType] || panelConfigs.admin;
 
   return (
-    <main className="min-h-screen bg-[#080808] text-white">
+    <main className="min-h-screen min-w-0 bg-[#080808] text-white">
       <div className="xl:flex xl:min-h-screen">
         <AdminSidebar config={config} currentPathname={currentPathname} />
 

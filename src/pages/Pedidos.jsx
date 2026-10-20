@@ -42,6 +42,7 @@ export default function Pedidos() {
   const [cart, setCart] = useState({});
   const [selectedOfferId, setSelectedOfferId] = useState("");
   const [observations, setObservations] = useState([]);
+  const [observationsText, setObservationsText] = useState("");
 
   const [form, setForm] = useState({
     nombre: "",
@@ -158,6 +159,15 @@ export default function Pedidos() {
     offerDiscount > 0 ? `Descuento: -${formatMoney(offerDiscount)}` : "",
     `Total: ${formatMoney(total)}`,
   ].filter(Boolean).join("\n");
+  const quickObservations = observations.join(", ");
+  const customObservationLimit = Math.max(
+    0,
+    200 - quickObservations.length - (quickObservations ? 2 : 0)
+  );
+  const observationsValue = [quickObservations, observationsText.trim()]
+    .filter(Boolean)
+    .join(", ")
+    .slice(0, 200);
 
   function handleChange(e) {
     const { name, value } = e.target;
@@ -186,12 +196,18 @@ export default function Pedidos() {
   }
 
   function toggleObservation(observation) {
-    setObservations((current) => current.includes(observation)
-      ? current.filter((item) => item !== observation)
-      : current.length < 3
-        ? [...current, observation]
-        : current
+    const nextObservations = observations.includes(observation)
+      ? observations.filter((item) => item !== observation)
+      : observations.length < 3 && [...observations, observation].join(", ").length <= 200
+        ? [...observations, observation]
+        : observations;
+    const nextQuickObservations = nextObservations.join(", ");
+    const nextTextLimit = Math.max(
+      0,
+      200 - nextQuickObservations.length - (nextQuickObservations ? 2 : 0)
     );
+    setObservations(nextObservations);
+    setObservationsText((current) => current.slice(0, nextTextLimit));
     setError("");
   }
 
@@ -273,7 +289,7 @@ export default function Pedidos() {
 
             descripcion: orderDescription,
 
-            observaciones: observations.join(", ") || null,
+            observaciones: observationsValue || null,
 
             total,
 
@@ -309,6 +325,7 @@ export default function Pedidos() {
       setCart({});
       setSelectedOfferId("");
       setObservations([]);
+      setObservationsText("");
     } catch (unexpectedError) {
       console.error(
         "Error inesperado registrando pedido:",
@@ -788,7 +805,7 @@ export default function Pedidos() {
 
                 <fieldset className="space-y-3">
                   <legend className="mb-2 text-sm font-semibold text-gray-200">
-                    Observaciones (opcional, hasta 3)
+                    Observaciones (opcional, máximo 200 caracteres)
                   </legend>
                   <div className="grid gap-2 sm:grid-cols-2">
                     {ORDER_OBSERVATIONS.map((observation) => {
@@ -811,6 +828,24 @@ export default function Pedidos() {
                         </label>
                       );
                     })}
+                  </div>
+                  <div>
+                    <label htmlFor="pedido-observaciones" className="mb-2 block text-sm font-semibold text-gray-300">
+                      ¿Querés agregar un detalle específico?
+                    </label>
+                    <textarea
+                      id="pedido-observaciones"
+                      name="observaciones"
+                      rows={3}
+                      maxLength={customObservationLimit}
+                      value={observationsText}
+                      onChange={(event) => setObservationsText(event.target.value.slice(0, customObservationLimit))}
+                      placeholder="Ej.: la salsa aparte, cortar el shawarma por la mitad..."
+                      className="w-full resize-y rounded-xl border border-white/10 bg-[#090909] px-4 py-3 outline-none transition placeholder:text-gray-600 focus:border-[#e71921]"
+                    />
+                    <p className="mt-1 text-right text-xs text-gray-500" aria-live="polite">
+                      {Math.min(200, quickObservations.length + (quickObservations ? 2 : 0) + observationsText.length)}/200
+                    </p>
                   </div>
                 </fieldset>
 
@@ -935,7 +970,7 @@ export default function Pedidos() {
           },
           {
             label: "Observaciones",
-            value: observations.join(", ") || "Sin observaciones",
+            value: observationsValue || "Sin observaciones",
           },
           {
             label: "Total",

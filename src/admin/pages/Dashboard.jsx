@@ -11,6 +11,13 @@ const moneyFormatter = new Intl.NumberFormat("es-AR", {
 });
 
 const numberFormatter = new Intl.NumberFormat("es-AR");
+const statusColors = {
+  pendiente: "#ff7278",
+  confirmado: "#e71921",
+  finalizado: "#a80f17",
+  cancelado: "#66666b",
+  otros: "#d43a40",
+};
 
 function formatMoney(value) {
   return moneyFormatter.format(Number(value) || 0);
@@ -47,24 +54,108 @@ function isCancelled(status) {
   return String(status || "").toLowerCase() === "cancelado";
 }
 
+function summarizeStatuses(records) {
+  const counts = new Map();
+  records.forEach((record) => {
+    const status = String(record.estado || "pendiente").toLowerCase();
+    counts.set(status, (counts.get(status) || 0) + 1);
+  });
+
+  return [...counts.entries()]
+    .sort(([first], [second]) => first.localeCompare(second, "es"))
+    .map(([label, value]) => ({
+      label,
+      value,
+      color: statusColors[label] || statusColors.otros,
+    }));
+}
+
+function DonutCard({ title, caption, items, loading }) {
+  const total = items.reduce((sum, item) => sum + item.value, 0);
+  const radius = 43;
+  const circumference = 2 * Math.PI * radius;
+  let offset = 0;
+
+  return (
+    <section className="overflow-hidden rounded-3xl border border-white/[0.08] bg-gradient-to-br from-[#191919] via-[#121212] to-[#0d0d0d] p-5 shadow-[0_24px_70px_rgba(0,0,0,0.35)] sm:p-6">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#ff5b62]">Distribución</p>
+          <h2 className="mt-2 text-lg font-black text-white">{title}</h2>
+          <p className="mt-1 text-xs font-medium text-gray-500">{caption}</p>
+        </div>
+        <span className="grid size-10 shrink-0 place-items-center rounded-2xl border border-[#e71921]/20 bg-[#e71921]/10 text-[#ff5b62]" aria-hidden="true">◌</span>
+      </div>
+
+      {loading ? (
+        <p className="mt-8 text-sm font-bold text-gray-500">Calculando distribución...</p>
+      ) : total === 0 ? (
+        <p className="mt-8 rounded-2xl border border-white/[0.07] bg-white/[0.025] p-4 text-sm font-bold text-gray-500">Todavía no hay registros para mostrar.</p>
+      ) : (
+        <div className="mt-6 grid min-w-0 grid-cols-1 items-center gap-4 sm:grid-cols-[minmax(120px,0.9fr)_minmax(0,1.1fr)] sm:gap-6">
+          <div className="relative mx-auto aspect-square w-full max-w-[176px]" role="img" aria-label={`${title}: ${items.map((item) => `${item.label} ${item.value}`).join(", ")}`}>
+            <svg viewBox="0 0 112 112" className="h-full w-full -rotate-90 drop-shadow-[0_10px_24px_rgba(0,0,0,0.25)]" aria-hidden="true">
+              <circle cx="56" cy="56" r={radius} fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="12" />
+              {items.map((item) => {
+                const segment = total ? (item.value / total) * circumference : 0;
+                const circle = (
+                  <circle
+                    key={item.label}
+                    cx="56"
+                    cy="56"
+                    r={radius}
+                    fill="none"
+                    stroke={item.color}
+                    strokeWidth="12"
+                    strokeDasharray={`${segment} ${circumference - segment}`}
+                    strokeDashoffset={-offset}
+                    strokeLinecap="round"
+                    className="transition-all duration-700"
+                  />
+                );
+                offset += segment;
+                return circle;
+              })}
+            </svg>
+            <div className="absolute inset-0 grid place-content-center text-center">
+              <span className="text-3xl font-black tracking-tight text-white">{numberFormatter.format(total)}</span>
+              <span className="mt-0.5 text-[9px] font-black uppercase tracking-[0.2em] text-gray-500">Total</span>
+            </div>
+          </div>
+          <ul className="grid gap-3">
+            {items.map((item) => (
+              <li key={item.label} className="flex min-w-0 items-center gap-2.5">
+                <span className="size-2.5 shrink-0 rounded-full shadow-[0_0_12px_currentColor]" style={{ backgroundColor: item.color, color: item.color }} aria-hidden="true" />
+                <span className="min-w-0 flex-1 truncate text-xs font-bold capitalize text-gray-400">{item.label}</span>
+                <span className="text-sm font-black tabular-nums text-white">{numberFormatter.format(item.value)}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </section>
+  );
+}
+
 function StatCard({ label, value, detail, symbol }) {
   return (
-    <article className="rounded-xl border border-white/10 bg-[#151515] p-5 transition hover:border-[#e71921]/50">
+    <article className="group relative overflow-hidden rounded-3xl border border-white/[0.08] bg-gradient-to-br from-[#191919] to-[#101010] p-5 shadow-[0_18px_45px_rgba(0,0,0,0.3)] transition duration-300 hover:-translate-y-1 hover:border-[#e71921]/35">
+      <div className="pointer-events-none absolute -right-10 -top-12 size-36 rounded-full bg-[#e71921]/[0.08] blur-2xl transition group-hover:bg-[#e71921]/[0.15]" />
       <div className="flex items-start justify-between gap-3">
         <p className="text-sm font-bold text-[#b9b9b9]">
           {label}
         </p>
 
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#e71921]/10 text-lg font-black text-[#e71921]">
+        <span className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-[#e71921]/25 bg-[#e71921]/10 text-lg font-black text-[#ff5b62]">
           {symbol}
         </span>
       </div>
 
-      <p className="mt-4 break-words text-3xl font-black text-white sm:text-4xl">
+      <p className="relative mt-5 break-words text-3xl font-black tracking-tight text-white sm:text-4xl">
         {value}
       </p>
 
-      <p className="mt-2 text-xs font-bold leading-5 text-gray-500">
+      <p className="relative mt-2 text-xs font-medium leading-5 text-gray-500">
         {detail}
       </p>
     </article>
@@ -267,6 +358,8 @@ export default function Dashboard({ panelType = "admin" }) {
       pendingReservations,
       revenueThisMonth,
       finalizedThisMonth: finalizedThisMonth.length,
+      orderStatuses: summarizeStatuses(orders),
+      reservationStatuses: summarizeStatuses(reservations),
 
       chartDays: chartDays.map((day) => ({
         ...day,
@@ -311,8 +404,8 @@ export default function Dashboard({ panelType = "admin" }) {
       }
       description="Resumen de la actividad de Jalu Comidas Árabes con información obtenida de los pedidos y las reservas registrados."
     >
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-xs font-bold text-gray-500">
+      <div className="flex min-w-0 flex-col items-stretch justify-between gap-3 rounded-2xl border border-white/[0.07] bg-gradient-to-r from-[#171717] to-[#101010] px-4 py-3 shadow-[0_12px_34px_rgba(0,0,0,0.28)] sm:flex-row sm:items-center sm:px-5">
+        <p className="min-w-0 break-words text-xs font-bold text-gray-500">
           {lastUpdated
             ? `Última actualización: ${formatDateTime(lastUpdated)}`
             : "Las estadísticas se actualizan al cargar esta pantalla."}
@@ -322,7 +415,7 @@ export default function Dashboard({ panelType = "admin" }) {
           type="button"
           onClick={loadDashboard}
           disabled={loading}
-          className="inline-flex min-h-10 items-center justify-center rounded-lg border border-[#e71921] bg-[#e71921] px-4 text-xs font-black uppercase text-white transition hover:bg-[#ff2a33] disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex min-h-10 w-full items-center justify-center rounded-xl border border-[#ff5b62]/30 bg-[#e71921] px-4 text-xs font-black uppercase text-white shadow-[0_8px_24px_rgba(231,25,33,0.22)] transition hover:bg-[#ff2a33] disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
         >
           {loading ? "Actualizando..." : "Actualizar estadísticas"}
         </button>
@@ -331,7 +424,7 @@ export default function Dashboard({ panelType = "admin" }) {
       {error && (
         <div
           role="alert"
-          className="rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-sm font-bold leading-6 text-red-300"
+          className="rounded-2xl border border-pink-400/25 bg-pink-400/[0.08] p-4 text-sm font-bold leading-6 text-pink-200"
         >
           {error}
         </div>
@@ -339,7 +432,7 @@ export default function Dashboard({ panelType = "admin" }) {
 
       <section
         aria-label="Indicadores principales"
-        className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
+        className="grid grid-cols-1 gap-4 sm:grid-cols-2 2xl:grid-cols-4"
       >
         <StatCard
           label="Pedidos de hoy"
@@ -380,15 +473,30 @@ export default function Dashboard({ panelType = "admin" }) {
         />
       </section>
 
-      <section className="grid gap-5 xl:grid-cols-[minmax(0,1.4fr)_minmax(320px,1fr)]">
-        <div className="rounded-xl border border-white/10 bg-[#151515] p-5 sm:p-6">
+      <section aria-label="Distribución por estado" className="grid min-w-0 grid-cols-1 gap-5 xl:grid-cols-2">
+        <DonutCard
+          title="Estado de pedidos"
+          caption="Todos los pedidos cargados"
+          items={stats.orderStatuses}
+          loading={loading}
+        />
+        <DonutCard
+          title="Estado de reservas"
+          caption="Todas las reservas cargadas"
+          items={stats.reservationStatuses}
+          loading={loading}
+        />
+      </section>
+
+      <section className="grid min-w-0 grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1.4fr)_minmax(280px,1fr)]">
+        <div className="rounded-3xl border border-white/[0.08] bg-gradient-to-br from-[#191919] via-[#121212] to-[#0d0d0d] p-5 shadow-[0_24px_70px_rgba(0,0,0,0.35)] sm:p-6">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.2em] text-[#e71921]">
+              <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#ff5b62]">
                 Rendimiento
               </p>
 
-              <h2 className="mt-2 text-lg font-black uppercase text-white">
+              <h2 className="mt-2 text-lg font-black text-white">
                 Ventas de los últimos 7 días
               </h2>
             </div>
@@ -407,13 +515,13 @@ export default function Dashboard({ panelType = "admin" }) {
           </div>
 
           {loading ? (
-            <p className="mt-8 text-sm font-bold text-neutral-500">
+            <p className="mt-8 text-sm font-bold text-gray-500">
               Calculando estadísticas...
             </p>
           ) : (
             <div className="mt-7">
               <div
-                className="flex h-44 items-end gap-2 sm:gap-3"
+                className="flex h-44 items-end gap-2 rounded-2xl border border-white/[0.06] bg-black/30 px-3 pb-2 pt-3 sm:gap-3"
                 aria-label="Gráfico de ventas por día"
               >
                 {stats.chartDays.map((day) => (
@@ -422,15 +530,15 @@ export default function Dashboard({ panelType = "admin" }) {
                     className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-2"
                     title={`${day.label}: ${formatMoney(day.revenue)} (${day.count} pedidos)`}
                   >
-                    <span className="max-w-full truncate text-[10px] font-bold text-gray-400">
+                    <span className="max-w-full truncate text-[10px] font-bold text-gray-300">
                       {day.revenue > 0
                         ? formatMoney(day.revenue)
                         : "—"}
                     </span>
 
-                    <div className="flex h-32 w-full items-end overflow-hidden rounded-t-md bg-white/[0.04]">
+                    <div className="flex h-32 w-full items-end overflow-hidden rounded-t-lg bg-white/[0.04]">
                       <div
-                        className="w-full rounded-t-md bg-[#e71921] transition-all"
+                        className="w-full rounded-t-lg bg-gradient-to-t from-[#a80f17] via-[#e71921] to-[#ff777d] shadow-[0_0_20px_rgba(231,25,33,0.2)] transition-all"
                         style={{ height: `${day.height}%` }}
                       />
                     </div>
@@ -450,28 +558,28 @@ export default function Dashboard({ panelType = "admin" }) {
           )}
         </div>
 
-        <div className="rounded-xl border border-white/10 bg-[#151515] p-5 sm:p-6">
+        <div className="rounded-3xl border border-white/[0.08] bg-gradient-to-br from-[#191919] via-[#121212] to-[#0d0d0d] p-5 shadow-[0_24px_70px_rgba(0,0,0,0.35)] sm:p-6">
           <div className="mb-5 flex items-center justify-between gap-3">
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.2em] text-[#e71921]">
+              <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#ff5b62]">
                 Agenda
               </p>
 
-              <h2 className="mt-2 text-lg font-black uppercase text-white">
+              <h2 className="mt-2 text-lg font-black text-white">
                 Próximas reservas
               </h2>
             </div>
 
             <a
               href={`${config.basePath}/reservas`}
-              className="text-xs font-black uppercase text-[#e71921] hover:text-white"
+              className="rounded-full border border-[#e71921]/25 bg-[#e71921]/[0.07] px-3 py-2 text-[10px] font-black uppercase tracking-wider text-[#ff777d] transition hover:bg-[#e71921]/[0.14]"
             >
               Ver todas
             </a>
           </div>
 
           {loading ? (
-            <p className="text-sm font-bold text-neutral-500">
+            <p className="text-sm font-bold text-gray-500">
               Cargando reservas...
             </p>
           ) : upcomingReservations.length === 0 ? (
@@ -483,10 +591,10 @@ export default function Dashboard({ panelType = "admin" }) {
               {upcomingReservations.map((reservation) => (
                 <article
                   key={reservation.id}
-                  className="rounded-lg border border-white/5 bg-white/[0.03] p-3"
+                  className="rounded-2xl border border-white/[0.06] bg-black/25 p-3 transition hover:border-[#e71921]/20"
                 >
                   <div className="flex flex-wrap items-start justify-between gap-2">
-                    <p className="font-black text-white">
+                      <p className="font-black text-white">
                       {reservation.nombre || "Cliente"}
                     </p>
 
@@ -513,28 +621,28 @@ export default function Dashboard({ panelType = "admin" }) {
         </div>
       </section>
 
-      <section className="rounded-xl border border-white/10 bg-[#151515] p-5 sm:p-6">
+      <section className="rounded-3xl border border-white/[0.08] bg-gradient-to-br from-[#191919] via-[#121212] to-[#0d0d0d] p-5 shadow-[0_24px_70px_rgba(0,0,0,0.35)] sm:p-6">
         <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.2em] text-[#e71921]">
+            <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#ff5b62]">
               Actividad reciente
             </p>
 
-            <h2 className="mt-2 text-lg font-black uppercase text-white">
+            <h2 className="mt-2 text-lg font-black text-white">
               Últimos pedidos
             </h2>
           </div>
 
           <a
             href={`${config.basePath}/pedidos`}
-            className="text-xs font-black uppercase text-[#e71921] hover:text-white"
+            className="rounded-full border border-[#e71921]/25 bg-[#e71921]/[0.07] px-3 py-2 text-[10px] font-black uppercase tracking-wider text-[#ff777d] transition hover:bg-[#e71921]/[0.14]"
           >
             Ir a pedidos
           </a>
         </div>
 
         {loading ? (
-          <p className="text-sm font-bold text-neutral-500">
+          <p className="text-sm font-bold text-gray-500">
             Cargando pedidos...
           </p>
         ) : recentOrders.length === 0 ? (
@@ -542,7 +650,7 @@ export default function Dashboard({ panelType = "admin" }) {
             Todavía no hay pedidos registrados.
           </EmptyState>
         ) : (
-          <div className="overflow-x-auto">
+        <div className="max-w-full overflow-x-auto overscroll-x-contain">
             <table className="w-full min-w-[600px] border-collapse text-left">
               <thead>
                 <tr className="border-b border-white/10 text-[10px] font-black uppercase tracking-wider text-gray-500">
@@ -558,7 +666,7 @@ export default function Dashboard({ panelType = "admin" }) {
                 {recentOrders.map((order) => (
                   <tr
                     key={order.id}
-                    className="border-b border-white/5 last:border-0"
+                    className="border-b border-white/[0.06] transition hover:bg-white/[0.025] last:border-0"
                   >
                     <td className="px-3 py-4 text-sm font-black text-white">
                       #{String(order.id).slice(0, 8)}
@@ -568,7 +676,7 @@ export default function Dashboard({ panelType = "admin" }) {
                       {order.nombre || "Cliente"}
                     </td>
 
-                    <td className="px-3 py-4 text-xs font-bold text-gray-400">
+                    <td className="px-3 py-4 text-xs font-bold text-gray-500">
                       {formatDateTime(order.created_at)}
                     </td>
 

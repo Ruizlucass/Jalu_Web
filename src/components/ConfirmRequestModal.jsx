@@ -34,7 +34,7 @@ export default function ConfirmRequestModal({
 
   return (
     <div
-      className="fixed inset-0 z-[120] flex items-center justify-center bg-black/80 px-4 backdrop-blur-sm"
+      className="fixed inset-0 z-[120] flex items-start justify-center overflow-y-auto bg-black/80 px-4 py-4 backdrop-blur-sm sm:items-center sm:py-6"
       onMouseDown={(e) => {
         // Si toca fuera del modal, también cancela
         if (e.target === e.currentTarget) {
@@ -42,7 +42,7 @@ export default function ConfirmRequestModal({
         }
       }}
     >
-      <div className="w-full max-w-lg rounded-3xl border border-white/10 bg-[#111111] p-6 text-white shadow-2xl sm:p-8">
+      <div className="my-auto max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto overscroll-contain rounded-3xl border border-white/10 bg-[#111111] p-6 text-white shadow-2xl sm:max-h-[calc(100dvh-3rem)] sm:p-8">
         
         {/* TÍTULO */}
         <div>

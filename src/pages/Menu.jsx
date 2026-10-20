@@ -340,6 +340,7 @@ export default function Menu() {
                     {visibleProducts.map((product) => (
                       <ProductCard
                         product={product}
+                        showOrderButton={false}
                         key={product.id}
                       />
                     ))}

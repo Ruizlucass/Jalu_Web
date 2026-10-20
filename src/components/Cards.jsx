@@ -18,7 +18,7 @@ export function QuickAccess() {
   );
 }
 
-export function ProductCard({ product }) {
+export function ProductCard({ product, showOrderButton = true }) {
   return (
     <article className="product-card">
       <div
@@ -40,9 +40,11 @@ export function ProductCard({ product }) {
           <span className="price">{product.price}</span>
         </div>
         <p>{product.desc}</p>
-        <Button href={whatsappBase} onClick={() => trackEvent(`click_pedir_${product.name}`)}>
-          Pedir por WhatsApp
-        </Button>
+        {showOrderButton && (
+          <Button href={whatsappBase} onClick={() => trackEvent(`click_pedir_${product.name}`)}>
+            Pedir por WhatsApp
+          </Button>
+        )}
       </div>
     </article>
   );

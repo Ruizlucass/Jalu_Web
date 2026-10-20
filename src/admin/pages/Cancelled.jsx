@@ -304,8 +304,8 @@ export default function Cancelled({
       </AdminSection>
 
       {confirmarEliminar && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 px-4">
-          <div className="w-full max-w-md rounded-3xl border border-white/10 bg-[#111111] p-7">
+        <div className="fixed inset-0 z-[200] flex items-start justify-center overflow-y-auto bg-black/80 px-4 py-4 sm:items-center sm:py-6">
+          <div className="my-auto max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-3xl border border-white/10 bg-[#111111] p-5 sm:max-h-[calc(100dvh-3rem)] sm:p-7">
             <h2 className="text-xl font-black">
               Eliminar definitivamente
             </h2>
