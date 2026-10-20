@@ -105,7 +105,7 @@ export default function Completed({ panelType = "admin" }) {
     setLoading(false);
   }
 
-  const { start, end } = activityRangeBounds(activityPeriod, activityDate);
+  const { start, end, startDate, endDate } = activityRangeBounds(activityPeriod, activityDate);
   const filteredOrders = orders.filter((order) => {
     const completedAt = order.finalizado_at || order.created_at;
     return completedAt && completedAt >= start && completedAt < end;
@@ -119,8 +119,17 @@ export default function Completed({ panelType = "admin" }) {
     return cancelledAt && cancelledAt >= start && cancelledAt < end;
   });
   const filteredReservations = reservations.filter((reservation) => {
-    const completedAt = reservation.finalizado_at || reservation.created_at;
-    return completedAt && completedAt >= start && completedAt < end;
+    // Las reservas antiguas pueden no tener finalizado_at. En ese caso,
+    // la fecha reservada es la referencia útil (created_at puede ser de otro día).
+    const completedAt = reservation.finalizado_at || reservation.fecha || reservation.created_at;
+    if (!completedAt) return false;
+
+    if (/^\d{4}-\d{2}-\d{2}$/.test(completedAt)) {
+      return completedAt >= startDate && completedAt < endDate;
+    }
+
+    const completedDate = new Date(completedAt);
+    return completedDate >= new Date(start) && completedDate < new Date(end);
   });
   const records =
     activeTab === "pedidos"
@@ -314,9 +323,9 @@ export default function Completed({ panelType = "admin" }) {
               <DetailCard
                 key={reservation.id}
                 title={reservation.nombre || "Cliente"}
-                subtitle={`Finalizada: ${formatDateTime(
-                  reservation.finalizado_at || reservation.created_at
-                )}`}
+                subtitle={`Finalizada: ${reservation.finalizado_at
+                  ? formatDateTime(reservation.finalizado_at)
+                  : formatReservationDate(reservation.fecha)}`}
                 status="finalizado"
                 fields={[
                   {

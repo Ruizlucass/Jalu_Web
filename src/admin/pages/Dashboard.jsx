@@ -3,6 +3,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "../../supabase.js";
 import { panelConfigs } from "../data/adminData.js";
 import { PageShell } from "../components/AdminUi.jsx";
+import { downloadPdf } from "../utils/downloadPdf.js";
+import { FaFilePdf } from "react-icons/fa";
 
 const moneyFormatter = new Intl.NumberFormat("es-AR", {
   style: "currency",
@@ -44,6 +46,51 @@ function localDateKey(date = new Date()) {
   const day = String(date.getDate()).padStart(2, "0");
 
   return `${year}-${month}-${day}`;
+}
+
+function reportRange(period) {
+  const today = new Date();
+  const start = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+  if (period === "week") {
+    const daysSinceMonday = (start.getDay() + 6) % 7;
+    start.setDate(start.getDate() - daysSinceMonday);
+  }
+
+  const end = new Date(start);
+  end.setDate(end.getDate() + (period === "week" ? 7 : 1));
+  const endDay = new Date(end);
+  endDay.setDate(endDay.getDate() - 1);
+
+  const formatDate = (date) => new Intl.DateTimeFormat("es-AR", {
+    dateStyle: "long",
+  }).format(date);
+
+  return {
+    start,
+    end,
+    startKey: localDateKey(start),
+    endKey: localDateKey(end),
+    label: period === "week"
+      ? `${formatDate(start)} al ${formatDate(endDay)}`
+      : formatDate(start),
+    fileKey: localDateKey(start),
+  };
+}
+
+function occursInRange(value, start, end) {
+  if (!value) return false;
+  const date = new Date(value);
+  return !Number.isNaN(date.getTime()) && date >= start && date < end;
+}
+
+function summarizeReportStatuses(records) {
+  const counts = new Map();
+  records.forEach((record) => {
+    const status = String(record.estado || "pendiente").toLowerCase();
+    counts.set(status, (counts.get(status) || 0) + 1);
+  });
+  return [...counts.entries()].map(([status, count]) => `${status}: ${numberFormatter.format(count)}`);
 }
 
 function isFinalized(status) {
@@ -210,7 +257,7 @@ export default function Dashboard({ panelType = "admin" }) {
         supabase
           .from("pedidos")
           .select(
-            "id, estado, total, created_at, finalizado_at, nombre, sucursal"
+            "id, estado, total, created_at, finalizado_at, cancelado_at, nombre, sucursal"
           )
           .order("created_at", { ascending: false }),
 
@@ -393,6 +440,78 @@ export default function Dashboard({ panelType = "admin" }) {
       })
       .slice(0, 5);
   }, [reservations]);
+
+  function descargarInforme(period) {
+    const range = reportRange(period);
+    const periodOrders = orders.filter((order) => {
+      const status = String(order.estado || "pendiente").toLowerCase();
+      const eventDate = status === "finalizado"
+        ? order.finalizado_at || order.created_at
+        : status === "cancelado"
+          ? order.cancelado_at || order.created_at
+          : order.created_at;
+      return occursInRange(eventDate, range.start, range.end);
+    });
+    const periodReservations = reservations.filter((reservation) => {
+      if (reservation.fecha) {
+        return reservation.fecha >= range.startKey && reservation.fecha < range.endKey;
+      }
+      return occursInRange(reservation.created_at, range.start, range.end);
+    });
+    const finalizedOrders = periodOrders.filter((order) => isFinalized(order.estado));
+    const finalizedRevenue = finalizedOrders.reduce(
+      (sum, order) => sum + (Number(order.total) || 0),
+      0
+    );
+    const reportTitle = period === "week" ? "Informe semanal del dashboard" : "Informe diario del dashboard";
+    const lines = [
+      `Periodo: ${range.label}`,
+      `Generado: ${formatDateTime(new Date())}`,
+      "",
+      "RESUMEN",
+      `Indicador del dashboard · Pedidos de hoy: ${numberFormatter.format(stats.ordersToday)}`,
+      `Indicador del dashboard · Ventas del mes: ${formatMoney(stats.revenueThisMonth)}`,
+      `Indicador del dashboard · Pedidos por atender: ${numberFormatter.format(stats.pendingOrders)}`,
+      `Indicador del dashboard · Reservas pendientes: ${numberFormatter.format(stats.pendingReservations)}`,
+      `Pedidos del periodo: ${numberFormatter.format(periodOrders.length)}`,
+      ...summarizeReportStatuses(periodOrders).map((summary) => `Pedidos ${summary}`),
+      `Ventas de pedidos finalizados en el periodo: ${formatMoney(finalizedRevenue)}`,
+      `Pedidos pendientes o confirmados al generar el informe: ${numberFormatter.format(stats.pendingOrders)}`,
+      `Reservas programadas en el periodo: ${numberFormatter.format(periodReservations.length)}`,
+      ...summarizeReportStatuses(periodReservations).map((summary) => `Reservas ${summary}`),
+      `Reservas pendientes al generar el informe: ${numberFormatter.format(stats.pendingReservations)}`,
+      "",
+      "VENTAS FINALIZADAS · ÚLTIMOS 7 DÍAS",
+      ...stats.chartDays.map((day) => `${day.label}: ${formatMoney(day.revenue)} · ${numberFormatter.format(day.count)} pedidos`),
+      "",
+      "DETALLE DE PEDIDOS",
+      ...(periodOrders.length
+        ? periodOrders.map((order) => {
+            const status = String(order.estado || "pendiente").toLowerCase();
+            const eventDate = status === "finalizado"
+              ? order.finalizado_at || order.created_at
+              : status === "cancelado"
+                ? order.cancelado_at || order.created_at
+                : order.created_at;
+            return `Pedido #${order.id} | ${order.nombre || "Cliente"} | ${order.sucursal || "Sin sucursal"} | ${status} | ${formatMoney(order.total)} | ${formatDateTime(eventDate)}`;
+          })
+        : ["No hubo pedidos en este periodo."]),
+      "",
+      "DETALLE DE RESERVAS",
+      ...(periodReservations.length
+        ? periodReservations.map((reservation) =>
+            `Reserva #${reservation.id} | ${reservation.nombre || "Cliente"} | ${reservation.sucursal || "Sin sucursal"} | ${reservation.fecha || "Sin fecha"} ${String(reservation.hora || "").slice(0, 5)} | ${Number(reservation.personas) || 0} personas | ${String(reservation.estado || "pendiente").toLowerCase()}`
+          )
+        : ["No hubo reservas programadas en este periodo."]),
+    ];
+
+    downloadPdf({
+      filename: `jalu-informe-${period === "week" ? "semanal" : "diario"}-${range.fileKey}.pdf`,
+      title: reportTitle,
+      subtitle: `Jalu Comidas Árabes · ${range.label}`,
+      lines,
+    });
+  }
 
   return (
     <PageShell
@@ -693,6 +812,38 @@ export default function Dashboard({ panelType = "admin" }) {
             </table>
           </div>
         )}
+      </section>
+
+      <section className="rounded-3xl border border-white/[0.08] bg-gradient-to-br from-[#191919] via-[#121212] to-[#0d0d0d] p-5 shadow-[0_24px_70px_rgba(0,0,0,0.35)] sm:p-6">
+        <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#ff5b62]">
+          Reportes
+        </p>
+        <h2 className="mt-2 text-lg font-black text-white">
+          Descargar información del dashboard
+        </h2>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-500">
+          Generá un PDF con los indicadores, los pedidos y las reservas del día o de la semana actual.
+        </p>
+        <div className="mt-5 grid gap-3 sm:grid-cols-2">
+          <button
+            type="button"
+            onClick={() => descargarInforme("day")}
+            disabled={loading || Boolean(error)}
+            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#e71921] px-4 text-xs font-black uppercase text-white shadow-[0_8px_24px_rgba(231,25,33,0.2)] transition hover:bg-[#ff2a33] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <FaFilePdf aria-hidden="true" />
+            Descargar PDF del día
+          </button>
+          <button
+            type="button"
+            onClick={() => descargarInforme("week")}
+            disabled={loading || Boolean(error)}
+            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-[#e71921]/50 bg-[#e71921]/10 px-4 text-xs font-black uppercase text-[#ff777d] transition hover:bg-[#e71921]/20 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <FaFilePdf aria-hidden="true" />
+            Descargar PDF de la semana
+          </button>
+        </div>
       </section>
     </PageShell>
   );

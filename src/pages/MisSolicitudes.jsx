@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import AuthModal from "../components/AuthModal";
@@ -77,6 +77,7 @@ export default function MisSolicitudes() {
   const [pedidos, setPedidos] = useState([]);
   const [reservas, setReservas] =
     useState([]);
+  const solicitudesLoadId = useRef(0);
 
   const [loading, setLoading] =
     useState(true);
@@ -136,6 +137,46 @@ export default function MisSolicitudes() {
       clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    const userId = session?.user?.id;
+    if (!userId) return undefined;
+    let lastRefreshAt = 0;
+
+    const actualizarAlVolver = () => {
+      if (document.visibilityState !== "visible") return;
+      if (Date.now() - lastRefreshAt < 1000) return;
+      lastRefreshAt = Date.now();
+      cargarSolicitudes(userId);
+    };
+
+    window.addEventListener("focus", actualizarAlVolver);
+    document.addEventListener("visibilitychange", actualizarAlVolver);
+
+    return () => {
+      window.removeEventListener("focus", actualizarAlVolver);
+      document.removeEventListener("visibilitychange", actualizarAlVolver);
+    };
+  }, [session?.user?.id]);
+
+  useEffect(() => {
+    const userId = session?.user?.id;
+    if (!userId) return undefined;
+
+    const channel = supabase
+      .channel(`mis-solicitudes-${userId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "pedidos" }, () => {
+        cargarSolicitudes(userId);
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "reservas" }, () => {
+        cargarSolicitudes(userId);
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [session?.user?.id]);
+
   async function cargarSesion() {
     const {
       data: { session },
@@ -157,6 +198,8 @@ export default function MisSolicitudes() {
   async function cargarSolicitudes(
     userId
   ) {
+    const loadId = solicitudesLoadId.current + 1;
+    solicitudesLoadId.current = loadId;
     setLoading(true);
     setError("");
 
@@ -180,6 +223,10 @@ export default function MisSolicitudes() {
           ascending: false,
         }),
     ]);
+
+    // Evita que una consulta más vieja vuelva a mostrar filas que otra
+    // consulta reciente ya confirmó como eliminadas.
+    if (loadId !== solicitudesLoadId.current) return;
 
     if (
       pedidosResponse.error ||
@@ -442,18 +489,32 @@ export default function MisSolicitudes() {
 
       <main className="min-h-screen bg-[#090909] px-6 pb-24 pt-36 text-white">
         <div className="mx-auto max-w-6xl">
-          <p className="text-sm font-bold uppercase tracking-[0.3em] text-[#e71921]">
-            Mi cuenta
-          </p>
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <p className="text-sm font-bold uppercase tracking-[0.3em] text-[#e71921]">
+                Mi cuenta
+              </p>
 
-          <h1 className="mt-3 text-4xl font-black sm:text-5xl">
-            Mis solicitudes
-          </h1>
+              <h1 className="mt-3 text-4xl font-black sm:text-5xl">
+                Mis solicitudes
+              </h1>
 
-          <p className="mt-4 max-w-2xl text-gray-400">
-            Consultá el estado de
-            tus pedidos y reservas.
-          </p>
+              <p className="mt-4 max-w-2xl text-gray-400">
+                Consultá el estado de
+                tus pedidos y reservas.
+              </p>
+            </div>
+            {session?.user && (
+              <button
+                type="button"
+                onClick={() => cargarSolicitudes(session.user.id)}
+                disabled={loading}
+                className="min-h-10 rounded-xl border border-white/15 px-4 text-xs font-black uppercase text-gray-300 transition hover:border-[#e71921]/50 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {loading ? "Actualizando..." : "Actualizar solicitudes"}
+              </button>
+            )}
+          </div>
 
           {!loadingSession &&
             !session && (
