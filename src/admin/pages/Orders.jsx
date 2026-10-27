@@ -204,7 +204,7 @@ export default function Orders({
           orders.length === 0 && (
             <p className="rounded-lg border border-white/5 bg-white/[0.03] p-5 text-sm font-bold text-neutral-500">
               No hay pedidos activos. Los finalizados
-              están en Finalizados y los cancelados en
+              están en Reportes y los cancelados en
               Cancelados.
             </p>
           )}

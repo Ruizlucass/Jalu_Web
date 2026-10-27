@@ -24,7 +24,7 @@ const profileSelects = [
   `,
 ];
 
-export async function queryProfiles() {
+export async function queryProfiles({ roleId } = {}) {
   let lastResult = null;
 
   for (const select of profileSelects) {
@@ -34,6 +34,9 @@ export async function queryProfiles() {
 
     if (select.includes("created_at")) {
       request = request.order("created_at", { ascending: false });
+    }
+    if (roleId) {
+      request = request.eq("role_id", roleId);
     }
 
     const result = await request;

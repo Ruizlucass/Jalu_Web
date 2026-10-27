@@ -149,7 +149,7 @@ export default function ArabeLibre() {
           </span>
 
           <h2 className="mt-4 text-5xl font-black md:text-6xl">
-            $ XX.XXX
+            $ 25.000
           </h2>
 
           <p className="mt-3 text-lg text-gray-400">

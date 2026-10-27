@@ -177,7 +177,7 @@ export default function Reservations({ panelType = "admin" }) {
 
         {!loading && reservations.length === 0 && (
           <p className="rounded-lg border border-white/5 bg-white/[0.03] p-5 text-sm font-bold text-neutral-500">
-            No hay reservas activas. Las finalizadas están guardadas en la sección Finalizados.
+            No hay reservas activas. Las finalizadas están guardadas en la sección Reportes.
           </p>
         )}
 

@@ -1,12 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { supabase } from "../../supabase.js";
-import { AdminSection, DataRow, PageShell } from "../components/AdminUi.jsx";
+import { AdminSection, PageShell } from "../components/AdminUi.jsx";
 import { panelConfigs } from "../data/adminData.js";
 import { normalizeProfile, queryProfiles } from "../utils/userProfiles.js";
 
 const statusFilters = [
-  { value: "todos", label: "Todos" },
   { value: "activo", label: "Activos" },
   { value: "inactivo", label: "Inactivos" },
 ];
@@ -14,16 +13,12 @@ const statusFilters = [
 export default function Users({ panelType = "superadmin" }) {
   const config = panelConfigs[panelType] || panelConfigs.superadmin;
   const [profiles, setProfiles] = useState([]);
-  const [roles, setRoles] = useState([]);
   const [currentUserId, setCurrentUserId] = useState("");
   const [statusFilter, setStatusFilter] = useState("activo");
-  const [savingUserId, setSavingUserId] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   const [lastActivityByUser, setLastActivityByUser] = useState({});
   const [now, setNow] = useState(() => Date.now());
-  const canManageRoles = panelType === "superadmin";
 
   const normalizedUsers = useMemo(
     () => profiles.map((profile) => {
@@ -35,7 +30,7 @@ export default function Users({ panelType = "superadmin" }) {
         : null;
       const inactiveByAge =
         activityTime !== null &&
-        now - activityTime > 30 * 24 * 60 * 60 * 1000;
+        now - activityTime > 15 * 24 * 60 * 60 * 1000;
 
       return {
         ...user,
@@ -50,10 +45,6 @@ export default function Users({ panelType = "superadmin" }) {
   );
 
   const visibleUsers = useMemo(() => {
-    if (statusFilter === "todos") {
-      return normalizedUsers;
-    }
-
     return normalizedUsers.filter(
       (user) => user.status.toLowerCase() === statusFilter
     );
@@ -62,14 +53,12 @@ export default function Users({ panelType = "superadmin" }) {
   async function loadUsers() {
     setLoading(true);
     setError("");
-    setSuccess("");
 
     try {
       const [
         profilesResult,
         ordersResult,
         reservationsResult,
-        rolesResult,
         sessionResult,
       ] = await Promise.all([
         queryProfiles(),
@@ -77,20 +66,14 @@ export default function Users({ panelType = "superadmin" }) {
           .from("pedidos")
           .select("user_id, created_at")
           .not("user_id", "is", null)
-          .gte("created_at", new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
+          .gte("created_at", new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString())
           .order("created_at", { ascending: false }),
         supabase
           .from("reservas")
           .select("user_id, created_at")
           .not("user_id", "is", null)
-          .gte("created_at", new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
+          .gte("created_at", new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString())
           .order("created_at", { ascending: false }),
-        canManageRoles
-          ? supabase
-              .from("roles")
-              .select("id, nombre")
-              .order("nombre", { ascending: true })
-          : Promise.resolve({ data: [], error: null }),
         supabase.auth.getSession(),
       ]);
 
@@ -104,10 +87,6 @@ export default function Users({ panelType = "superadmin" }) {
 
       if (reservationsResult.error) {
         throw reservationsResult.error;
-      }
-
-      if (rolesResult.error) {
-        throw rolesResult.error;
       }
 
       const activityByUser = {};
@@ -125,7 +104,6 @@ export default function Users({ panelType = "superadmin" }) {
 
       setProfiles(profilesResult.data || []);
       setLastActivityByUser(activityByUser);
-      setRoles(rolesResult.data || []);
       setCurrentUserId(
         sessionResult.data?.session?.user?.id || ""
       );
@@ -136,57 +114,6 @@ export default function Users({ panelType = "superadmin" }) {
       );
     } finally {
       setLoading(false);
-    }
-  }
-
-  async function updateUserRole(user, roleId) {
-    if (user.id === currentUserId) {
-      setError("No podés cambiar tu propio rol desde esta pantalla.");
-      setSuccess("");
-      return;
-    }
-
-    setSavingUserId(user.id);
-    setError("");
-    setSuccess("");
-
-    try {
-      const { error: updateError } = await supabase
-        .from("profiles")
-        .update({ role_id: roleId })
-        .eq("id", user.id);
-
-      if (updateError) {
-        throw updateError;
-      }
-
-      setProfiles((currentProfiles) =>
-        currentProfiles.map((profile) => {
-          if (profile.id !== user.id) {
-            return profile;
-          }
-
-          const selectedRole = roles.find(
-            (role) => String(role.id) === String(roleId)
-          );
-
-          return {
-            ...profile,
-            role_id: roleId,
-            roles: selectedRole
-              ? { nombre: selectedRole.nombre }
-              : profile.roles,
-          };
-        })
-      );
-      setSuccess(`Rol actualizado para ${user.name}.`);
-    } catch (updateError) {
-      console.error("Error actualizando rol:", updateError);
-      setError(
-        "No se pudo actualizar el rol. Revisá que Supabase permita esta acción solo a superadmin."
-      );
-    } finally {
-      setSavingUserId("");
     }
   }
 
@@ -203,7 +130,7 @@ export default function Users({ panelType = "superadmin" }) {
     <PageShell
       eyebrow="Usuarios"
       title="Usuarios"
-      description="El estado se calcula con la última actividad registrada en pedidos o reservas: después de 30 días sin actividad, el usuario figura como inactivo."
+      description="El estado se calcula con la última actividad registrada en pedidos o reservas: después de 15 días sin actividad, el usuario figura como inactivo."
     >
       <AdminSection
         eyebrow={config.label}
@@ -246,12 +173,6 @@ export default function Users({ panelType = "superadmin" }) {
             </p>
           )}
 
-          {!loading && success && (
-            <p className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm font-bold leading-6 text-emerald-200">
-              {success}
-            </p>
-          )}
-
           {!loading && visibleUsers.length === 0 && (
             <p className="rounded-lg border border-white/5 bg-white/[0.03] p-4 text-sm font-bold text-gray-400">
               No hay usuarios para ese estado.
@@ -259,24 +180,12 @@ export default function Users({ panelType = "superadmin" }) {
           )}
 
           {!loading && visibleUsers.map((user) => (
-            canManageRoles ? (
-              <UserManagementRow
-                key={user.id}
-                user={user}
-                roles={roles}
-                currentUserId={currentUserId}
-                savingUserId={savingUserId}
-                onRoleChange={updateUserRole}
-                lastActivityAt={user.lastActivityAt}
-              />
-            ) : (
-              <DataRow
-                key={user.id}
-                title={user.name}
-                meta={`${user.email} · ${user.role}`}
-                status={user.status}
-              />
-            )
+            <UserInfoRow
+              key={user.id}
+              user={user}
+              currentUserId={currentUserId}
+              lastActivityAt={user.lastActivityAt}
+            />
           ))}
         </div>
       </AdminSection>
@@ -284,20 +193,15 @@ export default function Users({ panelType = "superadmin" }) {
   );
 }
 
-function UserManagementRow({
+function UserInfoRow({
   user,
-  roles,
   currentUserId,
-  savingUserId,
-  onRoleChange,
   lastActivityAt,
 }) {
   const isCurrentUser = user.id === currentUserId;
-  const isSaving = savingUserId === user.id;
-  const disabled = isCurrentUser || isSaving || roles.length === 0;
 
   return (
-    <article className="grid gap-3 rounded-lg border border-white/10 bg-white/[0.03] p-4 lg:grid-cols-[minmax(0,1fr)_120px_220px] lg:items-center">
+    <article className="grid gap-3 rounded-lg border border-white/10 bg-white/[0.03] p-4 lg:grid-cols-[minmax(0,1fr)_120px] lg:items-center">
       <div className="min-w-0">
         <p className="truncate font-black text-white">
           {user.name}
@@ -317,34 +221,11 @@ function UserManagementRow({
         <p className="mt-1 text-xs font-bold text-gray-500">
           {lastActivityAt
             ? `Último pedido o reserva: ${formatActivityDate(lastActivityAt)}`
-            : "Sin pedidos ni reservas en los últimos 30 días"}
+            : "Sin pedidos ni reservas en los últimos 15 días"}
         </p>
       </div>
 
       <UserStatusBadge status={user.status} />
-
-      <select
-        value={user.roleId}
-        onChange={(event) => onRoleChange(user, event.target.value)}
-        disabled={disabled}
-        title={
-          isCurrentUser
-            ? "No podés cambiar tu propio rol"
-            : "Cambiar rol"
-        }
-        className="min-h-11 rounded-lg border border-white/10 bg-[#0f0f0f] px-3 text-sm font-bold text-white outline-none transition focus:border-[#e71921] focus:shadow-[0_0_0_3px_rgba(231,25,33,0.16)] disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        {!user.roleId && (
-          <option value="">
-            Sin rol
-          </option>
-        )}
-        {roles.map((role) => (
-          <option key={role.id} value={String(role.id)}>
-            {role.nombre}
-          </option>
-        ))}
-      </select>
     </article>
   );
 }

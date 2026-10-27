@@ -9,6 +9,51 @@ import {
   useActivityDate,
 } from "../components/ActivityDateFilter.jsx";
 
+const PAGE_SIZE = 10;
+
+function matchesDish(record, search) {
+  const normalize = (value) => String(value || "")
+    .toLocaleLowerCase("es-AR")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+  const normalizedSearch = normalize(search.trim());
+  if (!normalizedSearch) return true;
+
+  const dishes = String(record.descripcion || "")
+    .split(/\r?\n/)
+    .map((line) => line.match(/^\s*\d+\s*x\s+(.+?)(?:\s+—\s+|$)/i)?.[1])
+    .filter(Boolean);
+  return dishes.some((dish) => normalize(dish).includes(normalizedSearch));
+}
+
+function Pagination({ page, pageCount, onPageChange }) {
+  if (pageCount <= 1) return null;
+
+  return (
+    <nav className="flex items-center justify-center gap-3 pt-2" aria-label="Paginación de reportes">
+      <button
+        type="button"
+        onClick={() => onPageChange(page - 1)}
+        disabled={page === 1}
+        className="min-h-10 rounded-lg border border-white/10 px-4 text-xs font-black uppercase text-white transition hover:bg-white/[0.06] disabled:cursor-not-allowed disabled:opacity-40"
+      >
+        Anterior
+      </button>
+      <span className="text-xs font-bold text-neutral-400" aria-live="polite">
+        Página {page} de {pageCount}
+      </span>
+      <button
+        type="button"
+        onClick={() => onPageChange(page + 1)}
+        disabled={page === pageCount}
+        className="min-h-10 rounded-lg border border-white/10 px-4 text-xs font-black uppercase text-white transition hover:bg-white/[0.06] disabled:cursor-not-allowed disabled:opacity-40"
+      >
+        Siguiente
+      </button>
+    </nav>
+  );
+}
+
 function formatDateTime(value) {
   if (!value) return "—";
   return new Intl.DateTimeFormat("es-AR", {
@@ -42,7 +87,10 @@ export default function Completed({ panelType = "admin" }) {
   const [reservations, setReservations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [activityDate, setActivityDate, activityPeriod, setActivityPeriod] = useActivityDate();
+  const [dishSearch, setDishSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [activityDate, setActivityDate, activityPeriod, setActivityPeriod, activityEndDate, setActivityEndDate] = useActivityDate();
+  const [periodReferenceDate, setPeriodReferenceDate] = useState(activityDate);
 
   useEffect(() => {
     cargarFinalizados();
@@ -105,18 +153,22 @@ export default function Completed({ panelType = "admin" }) {
     setLoading(false);
   }
 
-  const { start, end, startDate, endDate } = activityRangeBounds(activityPeriod, activityDate);
+  const { start, end, startDate, endDate } = activityRangeBounds(
+    activityPeriod,
+    activityDate,
+    activityEndDate
+  );
   const filteredOrders = orders.filter((order) => {
     const completedAt = order.finalizado_at || order.created_at;
-    return completedAt && completedAt >= start && completedAt < end;
+    return completedAt && completedAt >= start && completedAt < end && matchesDish(order, dishSearch);
   });
   const filteredCancelledOrders = cancelledOrders.filter((order) => {
     const cancelledAt = order.cancelado_at || order.created_at;
-    return cancelledAt && cancelledAt >= start && cancelledAt < end;
+    return cancelledAt && cancelledAt >= start && cancelledAt < end && matchesDish(order, dishSearch);
   });
   const filteredCancelledReservations = cancelledReservations.filter((reservation) => {
     const cancelledAt = reservation.cancelado_at || reservation.created_at;
-    return cancelledAt && cancelledAt >= start && cancelledAt < end;
+    return !dishSearch.trim() && cancelledAt && cancelledAt >= start && cancelledAt < end;
   });
   const filteredReservations = reservations.filter((reservation) => {
     // Las reservas antiguas pueden no tener finalizado_at. En ese caso,
@@ -137,19 +189,63 @@ export default function Completed({ panelType = "admin" }) {
       : activeTab === "cancelados"
         ? [...filteredCancelledOrders, ...filteredCancelledReservations]
         : filteredReservations;
+  const pageCount = Math.max(1, Math.ceil(records.length / PAGE_SIZE));
+  const currentPage = Math.min(page, pageCount);
+  const paginatedOrders = filteredOrders.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const paginatedReservations = filteredReservations.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+  useEffect(() => {
+    setPage(1);
+  }, [activeTab, activityDate, activityEndDate, activityPeriod, dishSearch]);
+
+  useEffect(() => {
+    if (activityPeriod === "day") setPeriodReferenceDate(activityDate);
+  }, [activityDate, activityPeriod]);
+
+  function changeActivityPeriod(period, rangeStart = activityDate, rangeEnd = activityEndDate) {
+    if (period === "range") {
+      setActivityDate(rangeStart);
+      setActivityEndDate(rangeEnd);
+      setPeriodReferenceDate(rangeStart);
+      setActivityPeriod("range");
+      return;
+    }
+
+    const bounds = activityRangeBounds(period, periodReferenceDate);
+    setActivityDate(bounds.startDate);
+    setActivityEndDate(bounds.throughDate);
+    setActivityPeriod(period);
+  }
 
   return (
     <PageShell
-      eyebrow="Historial"
-      title="Finalizados"
-      description="Consultá pedidos y reservas finalizados o cancelados por fecha."
+      eyebrow="Reportes"
+      title="Reportes"
+      description="Consultá pedidos y reservas finalizados o cancelados por día, semana, mes o un rango de fechas."
     >
       <ActivityDateFilter
-        date={activityDate}
-        onChange={setActivityDate}
+        fromDate={activityDate}
+        toDate={activityEndDate}
         period={activityPeriod}
-        onPeriodChange={setActivityPeriod}
+        onPeriodChange={changeActivityPeriod}
       />
+
+      <label className="grid gap-2 text-xs font-black uppercase tracking-wider text-[#b9b9b9]">
+        Buscar por nombre de plato
+        <input
+          type="search"
+          value={dishSearch}
+          onChange={(event) => setDishSearch(event.target.value)}
+          placeholder="Ej. Shawarma"
+          disabled={activeTab === "reservas"}
+          className="min-h-11 w-full rounded-lg border border-white/10 bg-[#0f0f0f] px-3 text-sm font-bold normal-case tracking-normal text-white placeholder:text-neutral-600 focus:border-[#e71921] focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+        />
+        <span className="normal-case font-medium tracking-normal text-neutral-500">
+          {activeTab === "reservas"
+            ? "La búsqueda por plato está disponible para pedidos."
+            : "Buscá platos dentro del período o rango de fechas seleccionado."}
+        </span>
+      </label>
 
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
         <button
@@ -170,7 +266,10 @@ export default function Completed({ panelType = "admin" }) {
         <button
           type="button"
           aria-pressed={activeTab === "reservas"}
-          onClick={() => setActiveTab("reservas")}
+          onClick={() => {
+            setActiveTab("reservas");
+            setDishSearch("");
+          }}
           className={`flex min-h-12 items-center justify-center gap-2 rounded-xl px-4 py-3 text-xs font-black uppercase transition duration-200 hover:-translate-y-0.5 ${
             activeTab === "reservas"
               ? "bg-gradient-to-r from-[#e71921] to-[#b90e16] text-white shadow-[0_10px_25px_rgba(231,25,33,0.2)]"
@@ -222,14 +321,14 @@ export default function Completed({ panelType = "admin" }) {
         {!loading && records.length === 0 && (
           <p className="rounded-lg border border-white/5 bg-white/[0.03] p-5 text-sm font-bold text-neutral-500">
             {activeTab === "cancelados"
-              ? "Todavía no hay pedidos ni reservas cancelados para esta fecha."
-              : `Todavía no hay ${activeTab} finalizados para esta fecha.`}
+              ? "Todavía no hay pedidos ni reservas cancelados dentro del período seleccionado."
+              : `Todavía no hay ${activeTab} finalizados dentro del período seleccionado.`}
           </p>
         )}
 
         <div className="grid gap-4">
-          {activeTab === "pedidos" &&
-            filteredOrders.map((order) => (
+        {activeTab === "pedidos" &&
+            paginatedOrders.map((order) => (
               <DetailCard
                 key={order.id}
                 title={`Pedido #${String(order.id).slice(0, 8)} · ${order.nombre || "Cliente"}`}
@@ -319,7 +418,7 @@ export default function Completed({ panelType = "admin" }) {
             ))}
 
           {activeTab === "reservas" &&
-            filteredReservations.map((reservation) => (
+            paginatedReservations.map((reservation) => (
               <DetailCard
                 key={reservation.id}
                 title={reservation.nombre || "Cliente"}
@@ -346,6 +445,9 @@ export default function Completed({ panelType = "admin" }) {
               />
             ))}
         </div>
+        {activeTab !== "cancelados" && !loading && (
+          <Pagination page={currentPage} pageCount={pageCount} onPageChange={setPage} />
+        )}
       </AdminSection>
     </PageShell>
   );
