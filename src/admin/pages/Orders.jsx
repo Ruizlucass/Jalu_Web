@@ -98,15 +98,26 @@ export default function Orders({
 
     if (!accepted) return;
 
+
     setUpdatingId(order.id);
     setError("");
+
+    const updatePayload = { estado: nextStatus };
+    if (nextStatus === "finalizado") {
+      // El medio de pago ya lo eligió el cliente al realizar el pedido.
+      // El panel administrativo solo registra el cobro según esa elección.
+      const medioPago = order.medio_pago;
+      const total = Number(order.total) || 0;
+      updatePayload.pago_efectivo = medioPago === "efectivo" ? total : 0;
+      updatePayload.pago_transferencia = medioPago === "transferencia" ? total : 0;
+      updatePayload.pagado_at = new Date().toISOString();
+      updatePayload.finalizado_at = new Date().toISOString();
+    }
 
     const { error: updateError } =
       await supabase
         .from("pedidos")
-        .update({
-          estado: nextStatus,
-        })
+        .update(updatePayload)
         .eq("id", order.id);
 
     if (updateError) {
@@ -260,6 +271,7 @@ export default function Orders({
             });
 
             return (
+              <div key={order.id} className="grid gap-3">
               <DetailCard
                 key={order.id}
                 title={`Pedido #${String(
@@ -293,6 +305,10 @@ export default function Orders({
                         : "Take Away",
                   },
                   {
+                    label: "Medio de pago elegido por el cliente",
+                    value: order.medio_pago === "transferencia" ? "Transferencia" : order.medio_pago === "efectivo" ? "Efectivo" : "No seleccionado",
+                  },
+                  {
                     label: "Dirección",
                     value:
                       order.tipo_entrega ===
@@ -307,7 +323,7 @@ export default function Orders({
                     ),
                   },
                 ]}
-                descriptionLabel="Descripción del pedido y observaciones"
+                descriptionLabel="Productos incluidos, importes y observaciones"
                 description={
                   [
                     order.descripcion,
@@ -318,6 +334,7 @@ export default function Orders({
                 }
                 actions={actions}
               />
+              </div>
             );
           })}
         </div>

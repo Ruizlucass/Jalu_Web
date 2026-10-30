@@ -1,4 +1,3 @@
-
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "../../supabase.js";
 import { panelConfigs } from "../data/adminData.js";
@@ -247,6 +246,9 @@ export default function Dashboard({ panelType = "admin" }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [lastUpdated, setLastUpdated] = useState(null);
+  const [salesPeriod, setSalesPeriod] = useState("current");
+  const [salesFrom, setSalesFrom] = useState(localDateKey(new Date(new Date().getFullYear(), new Date().getMonth(), 1)));
+  const [salesTo, setSalesTo] = useState(localDateKey(new Date()));
 
   const loadDashboard = useCallback(async () => {
     setLoading(true);
@@ -257,7 +259,7 @@ export default function Dashboard({ panelType = "admin" }) {
         supabase
           .from("pedidos")
           .select(
-            "id, estado, total, created_at, finalizado_at, cancelado_at, nombre, sucursal"
+            "id, estado, total, created_at, finalizado_at, cancelado_at, nombre, sucursal, descripcion, medio_pago, pago_efectivo, pago_transferencia, pagado_at"
           )
           .order("created_at", { ascending: false }),
 
@@ -340,7 +342,7 @@ export default function Dashboard({ panelType = "admin" }) {
         return false;
       }
 
-      const dateValue = order.finalizado_at || order.created_at;
+      const dateValue = order.pagado_at || order.finalizado_at || order.created_at;
 
       if (!dateValue) {
         return false;
@@ -353,6 +355,15 @@ export default function Dashboard({ panelType = "admin" }) {
 
     const revenueThisMonth = finalizedThisMonth.reduce(
       (total, order) => total + (Number(order.total) || 0),
+      0
+    );
+
+    const finalizedCash = finalizedThisMonth.reduce(
+      (sum, order) => sum + (Number(order.pago_efectivo) || 0),
+      0
+    );
+    const finalizedTransfer = finalizedThisMonth.reduce(
+      (sum, order) => sum + (Number(order.pago_transferencia) || 0),
       0
     );
 
@@ -369,7 +380,7 @@ export default function Dashboard({ panelType = "admin" }) {
           return false;
         }
 
-        const dateValue = order.finalizado_at || order.created_at;
+        const dateValue = order.pagado_at || order.finalizado_at || order.created_at;
 
         if (!dateValue) {
           return false;
@@ -404,6 +415,8 @@ export default function Dashboard({ panelType = "admin" }) {
       pendingOrders,
       pendingReservations,
       revenueThisMonth,
+      finalizedCash,
+      finalizedTransfer,
       finalizedThisMonth: finalizedThisMonth.length,
       orderStatuses: summarizeStatuses(orders),
       reservationStatuses: summarizeStatuses(reservations),
@@ -417,6 +430,36 @@ export default function Dashboard({ panelType = "admin" }) {
       })),
     };
   }, [orders, reservations]);
+
+  const salesReport = useMemo(() => {
+    const now = new Date();
+    let from = salesFrom;
+    let to = salesTo;
+    if (salesPeriod === "current" || salesPeriod === "previous") {
+      const offset = salesPeriod === "previous" ? -1 : 0;
+      const monthStart = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+      const monthEnd = new Date(now.getFullYear(), now.getMonth() + offset + 1, 0);
+      from = localDateKey(monthStart);
+      to = localDateKey(monthEnd);
+    }
+    const start = new Date(`${from}T00:00:00`);
+    const endExclusive = new Date(`${to}T00:00:00`);
+    endExclusive.setDate(endExclusive.getDate() + 1);
+    const finalized = orders.filter((order) => {
+      if (!isFinalized(order.estado)) return false;
+      const dateValue = order.pagado_at || order.finalizado_at || order.created_at;
+      if (!dateValue) return false;
+      const date = new Date(dateValue);
+      return date >= start && date < endExclusive;
+    });
+    return {
+      from, to,
+      orders: finalized,
+      total: finalized.reduce((sum, order) => sum + (Number(order.total) || 0), 0),
+      cash: finalized.reduce((sum, order) => sum + (Number(order.pago_efectivo) || 0), 0),
+      transfer: finalized.reduce((sum, order) => sum + (Number(order.pago_transferencia) || 0), 0),
+    };
+  }, [orders, salesPeriod, salesFrom, salesTo]);
 
   const recentOrders = useMemo(
     () => orders.slice(0, 6),
@@ -440,6 +483,26 @@ export default function Dashboard({ panelType = "admin" }) {
       })
       .slice(0, 5);
   }, [reservations]);
+
+  function descargarInformeVentas() {
+    const lines = [
+      `Período: ${salesReport.from} al ${salesReport.to}`,
+      `Generado: ${formatDateTime(new Date())}`,
+      `Total cobrado: ${formatMoney(salesReport.total)}`,
+      `Cobrado en efectivo: ${formatMoney(salesReport.cash)}`,
+      `Cobrado por transferencia: ${formatMoney(salesReport.transfer)}`,
+      `Cantidad de pedidos: ${salesReport.orders.length}`,
+      "",
+      "DETALLE DE VENTAS",
+      ...salesReport.orders.map((order) => `Pedido #${order.id} | ${order.nombre || "Cliente"} | ${formatDateTime(order.pagado_at || order.finalizado_at || order.created_at)} | ${order.medio_pago || "Medio no registrado"} | Efectivo: ${formatMoney(order.pago_efectivo)} | Transferencia: ${formatMoney(order.pago_transferencia)} | Total: ${formatMoney(order.total)}`),
+    ];
+    downloadPdf({
+      filename: `jalu-ventas-${salesReport.from}-${salesReport.to}.pdf`,
+      title: "Informe de ventas y pagos",
+      subtitle: `Jalu Comidas Árabes · ${salesReport.from} al ${salesReport.to}`,
+      lines,
+    });
+  }
 
   function descargarInforme(period) {
     const range = reportRange(period);
@@ -590,6 +653,52 @@ export default function Dashboard({ panelType = "admin" }) {
           detail="Reservas que todavía necesitan confirmación."
           symbol="◷"
         />
+      </section>
+
+      <section aria-label="Medios de pago del mes actual" className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2">
+        <StatCard
+          label="Cobrado en efectivo"
+          value={loading ? "—" : formatMoney(stats.finalizedCash)}
+          detail="Pedidos finalizados y cobrados durante el mes actual."
+          symbol="💵"
+        />
+        <StatCard
+          label="Cobrado por transferencia"
+          value={loading ? "—" : formatMoney(stats.finalizedTransfer)}
+          detail="Pedidos finalizados y cobrados durante el mes actual."
+          symbol="📲"
+        />
+      </section>
+
+      <section className="rounded-3xl border border-white/[0.08] bg-gradient-to-br from-[#191919] via-[#121212] to-[#0d0d0d] p-5 shadow-[0_24px_70px_rgba(0,0,0,0.35)] sm:p-6">
+        <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#ff5b62]">Ventas y facturación</p>
+        <h2 className="mt-2 text-lg font-black text-white">Historial de ventas cobradas</h2>
+        <p className="mt-1 text-sm text-gray-500">Consultá el mes actual, el mes anterior o un rango personalizado. No requiere abrir ni cerrar caja.</p>
+        <div className="mt-4 grid gap-2 sm:grid-cols-3">
+          <button type="button" onClick={() => setSalesPeriod("current")} className={`min-h-10 rounded-xl px-3 text-xs font-black uppercase ${salesPeriod === "current" ? "bg-[#e71921] text-white" : "border border-white/10 text-gray-300"}`}>Mes actual</button>
+          <button type="button" onClick={() => setSalesPeriod("previous")} className={`min-h-10 rounded-xl px-3 text-xs font-black uppercase ${salesPeriod === "previous" ? "bg-[#e71921] text-white" : "border border-white/10 text-gray-300"}`}>Mes anterior</button>
+          <button type="button" onClick={() => setSalesPeriod("custom")} className={`min-h-10 rounded-xl px-3 text-xs font-black uppercase ${salesPeriod === "custom" ? "bg-[#e71921] text-white" : "border border-white/10 text-gray-300"}`}>Elegir fechas</button>
+        </div>
+        {salesPeriod === "custom" && <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <label className="grid gap-1 text-xs font-bold text-gray-400">Desde<input type="date" value={salesFrom} onChange={(event) => setSalesFrom(event.target.value)} className="min-h-11 rounded-lg border border-white/10 bg-[#101010] px-3 text-white" /></label>
+          <label className="grid gap-1 text-xs font-bold text-gray-400">Hasta<input type="date" value={salesTo} onChange={(event) => setSalesTo(event.target.value)} min={salesFrom} className="min-h-11 rounded-lg border border-white/10 bg-[#101010] px-3 text-white" /></label>
+        </div>}
+        <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-2xl border border-white/[0.07] bg-black/25 p-4"><p className="text-xs font-bold text-gray-500">Total cobrado</p><p className="mt-2 text-2xl font-black text-white">{formatMoney(salesReport.total)}</p></div>
+          <div className="rounded-2xl border border-white/[0.07] bg-black/25 p-4"><p className="text-xs font-bold text-gray-500">Efectivo</p><p className="mt-2 text-2xl font-black text-white">{formatMoney(salesReport.cash)}</p></div>
+          <div className="rounded-2xl border border-white/[0.07] bg-black/25 p-4"><p className="text-xs font-bold text-gray-500">Transferencia</p><p className="mt-2 text-2xl font-black text-white">{formatMoney(salesReport.transfer)}</p></div>
+          <div className="rounded-2xl border border-white/[0.07] bg-black/25 p-4"><p className="text-xs font-bold text-gray-500">Pedidos cobrados</p><p className="mt-2 text-2xl font-black text-white">{numberFormatter.format(salesReport.orders.length)}</p></div>
+        </div>
+        <p className="mt-3 text-xs text-gray-500">Período: {salesReport.from} al {salesReport.to}. Los pedidos finalizados antes de implementar los medios de pago podrían no tener importes separados y aparecerán en el total histórico.</p>
+        <button type="button" onClick={descargarInformeVentas} disabled={loading || Boolean(error)} className="mt-4 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#e71921] px-4 text-xs font-black uppercase text-white transition hover:bg-[#ff2a33] disabled:opacity-50"><FaFilePdf aria-hidden="true" /> Descargar informe de este período</button>
+        <div className="mt-4 overflow-x-auto">
+          <table className="w-full min-w-[560px] text-left">
+            <thead><tr className="border-b border-white/10 text-[10px] font-black uppercase text-gray-500"><th className="px-3 py-3">Pedido</th><th className="px-3 py-3">Fecha cobro</th><th className="px-3 py-3">Medio</th><th className="px-3 py-3">Efectivo</th><th className="px-3 py-3">Transferencia</th><th className="px-3 py-3">Total</th></tr></thead>
+            <tbody>{salesReport.orders.slice().sort((a,b) => new Date(b.pagado_at || b.finalizado_at || b.created_at) - new Date(a.pagado_at || a.finalizado_at || a.created_at)).slice(0,50).map((order) => <tr key={order.id} className="border-b border-white/[0.05] text-sm"><td className="px-3 py-3 font-bold text-white">#{order.id}</td><td className="px-3 py-3 text-gray-400">{formatDateTime(order.pagado_at || order.finalizado_at || order.created_at)}</td><td className="px-3 py-3 capitalize text-gray-300">{order.medio_pago || "Sin registrar"}</td><td className="px-3 py-3 text-gray-300">{formatMoney(order.pago_efectivo)}</td><td className="px-3 py-3 text-gray-300">{formatMoney(order.pago_transferencia)}</td><td className="px-3 py-3 font-black text-white">{formatMoney(order.total)}</td></tr>)}</tbody>
+          </table>
+          {salesReport.orders.length === 0 && <p className="p-4 text-sm text-gray-500">No hay pedidos finalizados en este período.</p>}
+          {salesReport.orders.length > 50 && <p className="p-3 text-xs text-gray-500">Se muestran los últimos 50 pedidos del período.</p>}
+        </div>
       </section>
 
       <section aria-label="Distribución por estado" className="grid min-w-0 grid-cols-1 gap-5 xl:grid-cols-2">
@@ -770,12 +879,14 @@ export default function Dashboard({ panelType = "admin" }) {
           </EmptyState>
         ) : (
         <div className="max-w-full overflow-x-auto overscroll-x-contain">
-            <table className="w-full min-w-[600px] border-collapse text-left">
+            <table className="w-full min-w-[900px] border-collapse text-left">
               <thead>
                 <tr className="border-b border-white/10 text-[10px] font-black uppercase tracking-wider text-gray-500">
                   <th className="px-3 py-3">Pedido</th>
                   <th className="px-3 py-3">Cliente</th>
                   <th className="px-3 py-3">Fecha</th>
+                  <th className="px-3 py-3">Qué pidió</th>
+                  <th className="px-3 py-3">Medio de pago</th>
                   <th className="px-3 py-3">Total</th>
                   <th className="px-3 py-3">Estado</th>
                 </tr>
@@ -797,6 +908,16 @@ export default function Dashboard({ panelType = "admin" }) {
 
                     <td className="px-3 py-4 text-xs font-bold text-gray-500">
                       {formatDateTime(order.created_at)}
+                    </td>
+
+                    <td className="max-w-[360px] whitespace-pre-line px-3 py-4 text-xs leading-5 text-gray-300">
+                      {order.descripcion || "Sin detalle de productos"}
+                    </td>
+
+                    <td className="px-3 py-4">
+                      <span className={`inline-flex rounded-full border px-3 py-1 text-[10px] font-black uppercase ${order.medio_pago === "transferencia" ? "border-sky-400/25 bg-sky-400/10 text-sky-300" : order.medio_pago === "efectivo" ? "border-emerald-400/25 bg-emerald-400/10 text-emerald-300" : "border-white/10 bg-white/5 text-gray-400"}`}>
+                        {order.medio_pago === "transferencia" ? "Transferencia" : order.medio_pago === "efectivo" ? "Efectivo" : "No seleccionado"}
+                      </span>
                     </td>
 
                     <td className="px-3 py-4 text-sm font-black text-white">

@@ -39,17 +39,34 @@ export default function Pedidos() {
   const [offers, setOffers] = useState([]);
   const [offersLoading, setOffersLoading] = useState(true);
   const [offersError, setOffersError] = useState(false);
-  const [cart, setCart] = useState({});
+  const [cart, setCart] = useState(() => {
+    try {
+      const savedCart = window.sessionStorage.getItem("jalu_pedido_cart");
+      return savedCart ? JSON.parse(savedCart) : {};
+    } catch {
+      return {};
+    }
+  });
   const [selectedOfferId, setSelectedOfferId] = useState("");
   const [observations, setObservations] = useState([]);
   const [observationsText, setObservationsText] = useState("");
 
-  const [form, setForm] = useState({
-    nombre: "",
-    telefono: "",
-    sucursal: "",
-    tipo_entrega: "retiro",
-    direccion: "",
+  const [form, setForm] = useState(() => {
+    const initialForm = {
+      nombre: "",
+      telefono: "",
+      sucursal: "",
+      tipo_entrega: "retiro",
+      direccion: "",
+      medio_pago: "efectivo",
+    };
+
+    try {
+      const savedForm = window.sessionStorage.getItem("jalu_pedido_form");
+      return savedForm ? { ...initialForm, ...JSON.parse(savedForm) } : initialForm;
+    } catch {
+      return initialForm;
+    }
   });
 
   useEffect(() => {
@@ -70,6 +87,23 @@ export default function Pedidos() {
       subscription.unsubscribe();
     };
   }, []);
+
+  useEffect(() => {
+    try {
+      window.sessionStorage.setItem("jalu_pedido_cart", JSON.stringify(cart));
+    } catch (storageError) {
+      console.error("No se pudo guardar el carrito del pedido:", storageError);
+    }
+  }, [cart]);
+
+  // Conserva los datos personales al salir al catálogo y volver a Pedidos.
+  useEffect(() => {
+    try {
+      window.sessionStorage.setItem("jalu_pedido_form", JSON.stringify(form));
+    } catch (storageError) {
+      console.error("No se pudieron guardar los datos del pedido:", storageError);
+    }
+  }, [form]);
 
   async function cargarProductos() {
     setMenuLoading(true);
@@ -170,7 +204,20 @@ export default function Pedidos() {
     .slice(0, 200);
 
   function handleChange(e) {
-    const { name, value } = e.target;
+    const { name } = e.target;
+    let { value } = e.target;
+
+    if (name === "nombre") {
+      value = value
+        .replace(/[^a-zA-ZáéíóúÁÉÍÓÚüÜñÑ' -]/g, "")
+        .replace(/\s{2,}/g, " ")
+        .slice(0, 20);
+    }
+
+    if (name === "telefono") {
+      // Solo números: ejemplo válido 3816135274.
+      value = value.replace(/\D/g, "").slice(0, 10);
+    }
 
     setForm((actual) => ({
       ...actual,
@@ -227,14 +274,26 @@ export default function Pedidos() {
       return;
     }
 
+    const nombreCompleto = form.nombre.trim();
+    const partesNombre = nombreCompleto.split(/\s+/).filter(Boolean);
+    const telefonoNumeros = form.telefono.replace(/\D/g, "");
+
+    if (!nombreCompleto || !form.telefono.trim() || !form.sucursal) {
+      setError("Completá todos los campos obligatorios.");
+      return;
+    }
+
     if (
-      !form.nombre.trim() ||
-      !form.telefono.trim() ||
-      !form.sucursal
+      partesNombre.length < 2 ||
+      nombreCompleto.length > 20 ||
+      partesNombre.some((parte) => parte.length < 2)
     ) {
-      setError(
-        "Completá todos los campos obligatorios."
-      );
+      setError("Ingresá nombre y apellido. El máximo permitido es de 20 caracteres en total.");
+      return;
+    }
+
+    if (telefonoNumeros.length !== 10) {
+      setError("Ingresá un teléfono válido de 10 dígitos. Ejemplo: 3816135274.");
       return;
     }
 
@@ -292,18 +351,20 @@ export default function Pedidos() {
             observaciones: observationsValue || null,
 
             total,
+            medio_pago: form.medio_pago,
+            pago_efectivo: 0,
+            pago_transferencia: 0,
 
             estado: "pendiente",
           });
 
       if (supabaseError) {
-        console.error(
-          "Error registrando pedido:",
-          supabaseError
-        );
+        console.error("Error registrando pedido:", supabaseError);
 
+        // Cerramos el modal para que el usuario pueda ver el error.
+        setConfirmOpen(false);
         setError(
-          "No pudimos registrar el pedido. Intentá nuevamente."
+          `No pudimos registrar el pedido: ${supabaseError.message || "error desconocido"}`
         );
 
         return;
@@ -315,14 +376,20 @@ export default function Pedidos() {
         "¡Pedido registrado! Quedó pendiente de confirmación. Tenés 5 minutos para cancelarlo desde Mis solicitudes."
       );
 
-      setForm({
+      const emptyForm = {
         nombre: "",
         telefono: "",
         sucursal: "",
         tipo_entrega: "retiro",
         direccion: "",
-      });
+        medio_pago: "efectivo",
+      };
+      setForm(emptyForm);
       setCart({});
+      try {
+        window.sessionStorage.removeItem("jalu_pedido_cart");
+        window.sessionStorage.removeItem("jalu_pedido_form");
+      } catch {}
       setSelectedOfferId("");
       setObservations([]);
       setObservationsText("");
@@ -332,8 +399,9 @@ export default function Pedidos() {
         unexpectedError
       );
 
+      setConfirmOpen(false);
       setError(
-        "Ocurrió un error inesperado. Intentá nuevamente."
+        `Ocurrió un error inesperado: ${unexpectedError?.message || "intentá nuevamente"}`
       );
     } finally {
       setEnviando(false);
@@ -426,7 +494,7 @@ export default function Pedidos() {
               </p>
 
               <a
-                href="/menu"
+                href="/menu?modo=pedido"
                 className="mt-5 inline-block font-bold text-[#e71921] transition hover:text-red-400"
               >
                 Ver menú →
@@ -523,6 +591,9 @@ export default function Pedidos() {
                     value={form.nombre}
                     onChange={handleChange}
                     placeholder="Nombre y apellido"
+                    maxLength={20}
+                    autoComplete="name"
+                    required
                     className="w-full rounded-xl border border-white/10 bg-[#090909] px-4 py-3.5 outline-none transition focus:border-[#e71921]"
                   />
                 </div>
@@ -537,7 +608,12 @@ export default function Pedidos() {
                     name="telefono"
                     value={form.telefono}
                     onChange={handleChange}
-                    placeholder="381..."
+                    placeholder="3816135274"
+                    maxLength={10}
+                    inputMode="numeric"
+                    pattern="[0-9]{10}"
+                    autoComplete="tel"
+                    required
                     className="w-full rounded-xl border border-white/10 bg-[#090909] px-4 py-3.5 outline-none transition focus:border-[#e71921]"
                   />
                 </div>
@@ -650,6 +726,30 @@ export default function Pedidos() {
                   </div>
                 )}
 
+                <section className="space-y-3 rounded-2xl border border-white/10 bg-[#090909] p-4 sm:p-5">
+                  <p className="text-sm font-semibold text-gray-200">¿Cómo querés pagar? *</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setForm((actual) => ({ ...actual, medio_pago: "efectivo" }))}
+                      className={`rounded-xl border p-4 text-left transition ${form.medio_pago === "efectivo" ? "border-[#e71921] bg-[#e71921]/10" : "border-white/10 bg-[#090909] hover:border-white/20"}`}
+                    >
+                      <span className="block text-xl">💵</span>
+                      <span className="mt-2 block font-bold">Efectivo</span>
+                      <span className="mt-1 block text-xs text-gray-500">Pagás en efectivo</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setForm((actual) => ({ ...actual, medio_pago: "transferencia" }))}
+                      className={`rounded-xl border p-4 text-left transition ${form.medio_pago === "transferencia" ? "border-[#e71921] bg-[#e71921]/10" : "border-white/10 bg-[#090909] hover:border-white/20"}`}
+                    >
+                      <span className="block text-xl">📲</span>
+                      <span className="mt-2 block font-bold">Transferencia</span>
+                      <span className="mt-1 block text-xs text-gray-500">Transferís al confirmar</span>
+                    </button>
+                  </div>
+                </section>
+
                 <section className="space-y-4 rounded-2xl border border-white/10 bg-[#090909] p-4 sm:p-5">
                   <div className="flex flex-wrap items-end justify-between gap-2">
                     <div>
@@ -660,7 +760,7 @@ export default function Pedidos() {
                         Productos disponibles publicados en el menú.
                       </p>
                     </div>
-                    <a href="/menu" className="text-xs font-bold text-[#ff5b62] hover:text-white">
+                    <a href="/menu?modo=pedido" className="text-xs font-bold text-[#ff5b62] hover:text-white">
                       Ver menú completo
                     </a>
                   </div>
@@ -949,6 +1049,10 @@ export default function Pedidos() {
           {
             label: "Sucursal",
             value: form.sucursal,
+          },
+          {
+            label: "Medio de pago",
+            value: form.medio_pago === "transferencia" ? "Transferencia" : "Efectivo",
           },
           {
             label: "Entrega",
