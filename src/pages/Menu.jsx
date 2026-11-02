@@ -1,4 +1,3 @@
-
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Navbar from "../components/Navbar.jsx";
 import { ProductCard } from "../components/Cards.jsx";
@@ -6,6 +5,7 @@ import Footer from "../components/Footer.jsx";
 import WspFlotante from "../components/WspFlotante.jsx";
 import { menuCategories, products as fallbackProducts } from "../utils/siteData.js";
 import { supabase } from "../supabase.js";
+import OffersCarousel from "../components/OffersCarousel.jsx";
 
 export default function Menu() {
   const [active, setActive] = useState("Combos");
@@ -88,7 +88,7 @@ export default function Menu() {
         const { data, error } = await supabase
           .from("promociones")
           .select(
-            "id, titulo, descripcion, tipo_descuento, valor_descuento, fecha_fin, aplica_todas_sucursales, sucursales_aplicables"
+            "id, titulo, descripcion, tipo_descuento, valor_descuento, fecha_inicio, fecha_fin, imagen_url, aplica_todas_sucursales, sucursales_aplicables"
           )
           .eq("activa", true)
           .lte("fecha_inicio", now)
@@ -245,6 +245,7 @@ export default function Menu() {
           </p>
         </div>
 
+        {/* CARRUSEL DE PROMOCIONES */}
         {offersLoading ? (
           <p
             className="py-6 text-center text-sm font-bold text-gray-400"
@@ -253,74 +254,7 @@ export default function Menu() {
             Buscando ofertas vigentes...
           </p>
         ) : offers.length > 0 ? (
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {offers.map((offer) => {
-              const discount = Number(offer.valor_descuento) || 0;
-
-              const discountLabel =
-                offer.tipo_descuento === "monto_fijo"
-                  ? `${new Intl.NumberFormat("es-AR", {
-                      style: "currency",
-                      currency: "ARS",
-                      maximumFractionDigits: 2,
-                    }).format(discount)} OFF`
-                  : `${new Intl.NumberFormat("es-AR", {
-                      maximumFractionDigits: 2,
-                    }).format(discount)}% OFF`;
-
-              return (
-                <article
-                  key={offer.id}
-                  className="flex min-w-0 flex-col justify-between gap-5 overflow-hidden rounded-2xl border border-[#e71921]/30 bg-gradient-to-br from-[#251012] via-[#151010] to-[#101010] p-5 shadow-[0_18px_45px_rgba(0,0,0,0.25)] sm:p-6"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <span className="inline-flex rounded-full border border-[#e71921]/30 bg-[#e71921]/10 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-[#ff7378]">
-                        Oferta por tiempo limitado
-                      </span>
-
-                      <h3 className="mt-4 break-words text-xl font-black uppercase text-white sm:text-2xl">
-                        {offer.titulo}
-                      </h3>
-                    </div>
-
-                    <strong className="shrink-0 rounded-xl bg-[#e71921] px-3 py-2 text-lg font-black text-white sm:text-xl">
-                      {discountLabel}
-                    </strong>
-                  </div>
-
-                  <p className="min-h-10 whitespace-pre-wrap break-words text-sm leading-6 text-gray-300">
-                    {offer.descripcion ||
-                      "Consultá por esta promoción al realizar tu pedido."}
-                  </p>
-
-                  <p className="text-xs font-bold text-gray-400">
-                    Aplica en:{" "}
-                    {offer.aplica_todas_sucursales === false
-                      ? (offer.sucursales_aplicables || []).join(", ")
-                      : "todas las sucursales"}
-                  </p>
-
-                  <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-4">
-                    <p className="text-xs font-bold text-gray-400">
-                      Vigente hasta{" "}
-                      {new Intl.DateTimeFormat("es-AR", {
-                        dateStyle: "medium",
-                        timeStyle: "short",
-                      }).format(new Date(offer.fecha_fin))}
-                    </p>
-
-                    <a
-                      href="/pedidos"
-                      className="inline-flex min-h-10 items-center justify-center rounded-lg bg-white px-4 text-xs font-black uppercase text-[#111] transition hover:bg-gray-200"
-                    >
-                      Hacer un pedido
-                    </a>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
+          <OffersCarousel offers={offers} />
         ) : offersLoadError ? (
           <p
             className="rounded-xl border border-amber-500/25 bg-amber-500/[0.06] px-5 py-8 text-center text-sm font-bold text-amber-200"
