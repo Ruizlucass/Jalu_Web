@@ -349,3 +349,18 @@
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
+
+.product-description {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+  min-height: calc(1.45em * 3);
+  max-height: calc(1.45em * 3);
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.product-body .btn {
+  margin-top: auto;
+}

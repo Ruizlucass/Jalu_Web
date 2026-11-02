@@ -34,14 +34,22 @@ export function ProductCard({ product, showOrderButton = true }) {
           </div>
         )}
       </div>
+
       <div className="product-body">
         <div className="product-top">
           <h3>{product.name}</h3>
           <span className="price">{product.price}</span>
         </div>
-        <p>{product.desc}</p>
+
+        <p className="product-description" title={product.desc || ""}>
+          {product.desc || "Preparado con ingredientes seleccionados."}
+        </p>
+
         {showOrderButton && (
-          <Button href={whatsappBase} onClick={() => trackEvent(`click_pedir_${product.name}`)}>
+          <Button
+            href={whatsappBase}
+            onClick={() => trackEvent(`click_pedir_${product.name}`)}
+          >
             Pedir por WhatsApp
           </Button>
         )}
