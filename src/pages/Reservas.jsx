@@ -41,6 +41,10 @@ export default function Reservas() {
   const [verificandoLimite, setVerificandoLimite] =
     useState(false);
 
+  const [horariosOcupados, setHorariosOcupados] = useState([]);
+
+  const [cargandoHorarios, setCargandoHorarios] = useState(false);
+
   const [mensaje, setMensaje] =
     useState("");
 
@@ -71,9 +75,52 @@ export default function Reservas() {
       getAvailableReservationTimes(
         form.sucursal,
         form.fecha
+      ).filter(
+        (time) =>
+          !horariosOcupados.includes(String(time).slice(0, 5))
       ),
-    [form.sucursal, form.fecha]
+    [form.sucursal, form.fecha, horariosOcupados]
   );
+
+  useEffect(() => {
+    let vigente = true;
+
+    async function cargarHorariosOcupados() {
+      if (!form.sucursal || !form.fecha) {
+        setHorariosOcupados([]);
+        setCargandoHorarios(false);
+        return;
+      }
+
+      setCargandoHorarios(true);
+      const { data, error: availabilityError } = await supabase.rpc(
+        "get_reserved_reservation_slots",
+        {
+          target_branch: form.sucursal,
+          target_date: form.fecha,
+        }
+      );
+
+      if (!vigente) return;
+
+      if (availabilityError) {
+        console.error("Error consultando horarios reservados:", availabilityError);
+        setError("No pudimos consultar los horarios disponibles. Intentá nuevamente.");
+        setHorariosOcupados([]);
+      } else {
+        setHorariosOcupados(
+          (data || []).map((reservation) => String(reservation.hora).slice(0, 5))
+        );
+      }
+
+      setCargandoHorarios(false);
+    }
+
+    cargarHorariosOcupados();
+    return () => {
+      vigente = false;
+    };
+  }, [form.sucursal, form.fecha]);
 
   useEffect(() => {
     cargarSesion();
@@ -253,7 +300,7 @@ export default function Reservas() {
 
     setVerificandoLimite(true);
     try {
-      const [activeResult, dailyResult] = await Promise.all([
+      const [activeResult, dailyResult, slotResult] = await Promise.all([
         supabase
           .from("reservas")
           .select("id")
@@ -265,10 +312,25 @@ export default function Reservas() {
           .select("id", { count: "exact", head: true })
           .eq("user_id", session.user.id)
           .eq("fecha", form.fecha),
+        supabase.rpc("get_reserved_reservation_slots", {
+          target_branch: form.sucursal,
+          target_date: form.fecha,
+        }),
       ]);
 
       if (activeResult.error) throw activeResult.error;
       if (dailyResult.error) throw dailyResult.error;
+      if (slotResult.error) throw slotResult.error;
+
+      const horarioOcupado = (slotResult.data || []).some(
+        (reservation) => String(reservation.hora).slice(0, 5) === String(form.hora).slice(0, 5)
+      );
+
+      if (horarioOcupado) {
+        setError("Ese horario ya está reservado en esta sucursal. Elegí otro horario.");
+        setHorariosOcupados((current) => [...new Set([...current, form.hora])]);
+        return;
+      }
 
       if (activeResult.data?.length) {
         setError(
@@ -353,6 +415,13 @@ export default function Reservas() {
         if (supabaseError.message?.includes("DAILY_RESERVATION_LIMIT_REACHED")) {
           setConfirmOpen(false);
           setError(`Ya alcanzaste el máximo de ${MAX_RESERVATIONS_PER_DAY} reservas para ese día.`);
+          return;
+        }
+
+        if (supabaseError.message?.includes("RESERVATION_SLOT_TAKEN")) {
+          setConfirmOpen(false);
+          setHorariosOcupados((current) => [...new Set([...current, form.hora])]);
+          setError("Ese horario acaba de ser reservado en esta sucursal. Elegí otro horario.");
           return;
         }
 
@@ -657,9 +726,13 @@ export default function Reservas() {
                     <p className="rounded-xl border border-white/10 bg-[#090909] px-4 py-3.5 text-sm text-gray-500">
                       Elegí una sucursal y una fecha para ver los horarios.
                     </p>
+                  ) : cargandoHorarios ? (
+                    <p className="rounded-xl border border-white/10 bg-[#090909] px-4 py-3.5 text-sm text-gray-500">
+                      Consultando horarios disponibles...
+                    </p>
                   ) : availableTimes.length === 0 ? (
                     <p className="rounded-xl border border-white/10 bg-[#090909] px-4 py-3.5 text-sm text-gray-500">
-                      No quedan horarios disponibles para esta fecha.
+                      No quedan horarios disponibles para esta sucursal y fecha.
                     </p>
                   ) : (
                     <div

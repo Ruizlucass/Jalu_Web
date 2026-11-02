@@ -106,9 +106,20 @@ export default function Reservations({ panelType = "admin" }) {
 
     if (updateError) {
       console.error("Error actualizando reserva:", updateError);
-      setError(
-        "No se pudo actualizar la reserva. Revisá que hayas ejecutado la migración de Supabase."
-      );
+      const databaseMessage = String(updateError.message || "");
+      if (databaseMessage.includes("ACTIVE_RESERVATION_EXISTS")) {
+        setError(
+          "No se pudo confirmar: este cliente ya tiene otra reserva pendiente o confirmada."
+        );
+      } else if (databaseMessage.includes("DAILY_RESERVATION_LIMIT_REACHED")) {
+        setError(
+          "No se pudo actualizar: el cliente ya alcanzó el máximo de 2 reservas para ese día."
+        );
+      } else {
+        setError(
+          "Supabase rechazó la actualización. Revisá los permisos y las políticas de reservas."
+        );
+      }
       setUpdatingId(null);
       return;
     }
