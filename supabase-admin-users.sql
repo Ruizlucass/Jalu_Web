@@ -18,6 +18,10 @@ $$;
 
 grant execute on function public.current_user_role_name() to authenticated;
 
+grant select on public.profiles to authenticated;
+grant update (role_id) on public.profiles to authenticated;
+grant select on public.roles to authenticated;
+
 alter table public.profiles enable row level security;
 alter table public.roles enable row level security;
 

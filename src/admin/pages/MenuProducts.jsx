@@ -331,7 +331,6 @@ export default function MenuProducts({ panelType = "admin" }) {
     <PageShell
       eyebrow={config.label}
       title="Productos del menú"
-      description="Creá y administrá los platos de Jalu. Los productos disponibles aparecerán en el menú público."
     >
       {message && (
         <div

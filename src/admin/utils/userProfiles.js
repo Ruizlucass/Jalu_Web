@@ -8,6 +8,7 @@ const profileSelects = [
     id,
     nombre,
     role_id,
+    email,
     created_at,
     roles (
       nombre

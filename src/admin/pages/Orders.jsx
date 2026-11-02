@@ -186,7 +186,6 @@ export default function Orders({
     <PageShell
       eyebrow="Pedidos"
       title="Pedidos del día"
-      description="Acá se muestran los pedidos recibidos hoy. Al finalizar el turno, marcá cada pedido como finalizado para guardarlo en el historial."
     >
       <AdminSection
         eyebrow={config.label}

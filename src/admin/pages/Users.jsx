@@ -130,7 +130,6 @@ export default function Users({ panelType = "superadmin" }) {
     <PageShell
       eyebrow="Usuarios"
       title="Usuarios"
-      description="El estado se calcula con la última actividad registrada en pedidos o reservas: después de 15 días sin actividad, el usuario figura como inactivo."
     >
       <AdminSection
         eyebrow={config.label}

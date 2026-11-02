@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-export function PageShell({ eyebrow, title, description, children }) {
+export function PageShell({ eyebrow, title, children }) {
   return (
     <div className="mx-auto grid min-w-0 w-full max-w-[1440px] grid-cols-1 gap-5 p-3 sm:gap-6 sm:p-6 xl:p-8">
       <section className="min-w-0">
@@ -8,11 +8,6 @@ export function PageShell({ eyebrow, title, description, children }) {
         <h1 className="mt-4 break-words text-3xl font-black uppercase leading-none text-white sm:text-4xl">
           {title}
         </h1>
-        {description && (
-          <p className="mt-3 max-w-2xl break-words text-sm font-bold leading-6 text-[#b9b9b9] sm:text-base">
-            {description}
-          </p>
-        )}
       </section>
 
       {children}

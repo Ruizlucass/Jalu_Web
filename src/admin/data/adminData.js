@@ -2,7 +2,6 @@ export const panelConfigs = {
   admin: {
     label: "Admin",
     title: "Panel Admin",
-    subtitle: "Gestion operativa de menu, ofertas, reservas y pedidos.",
     basePath: "/admin",
     links: [
       { href: "/admin", label: "Dashboard" },
@@ -16,7 +15,6 @@ export const panelConfigs = {
   superadmin: {
     label: "Superadmin",
     title: "Panel Superadmin",
-    subtitle: "Gestion general con usuarios, roles y vistas operativas.",
     basePath: "/superadmin",
     links: [
       { href: "/superadmin", label: "Dashboard" },

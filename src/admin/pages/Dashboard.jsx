@@ -116,7 +116,7 @@ function summarizeStatuses(records) {
     }));
 }
 
-function DonutCard({ title, caption, items, loading }) {
+function DonutCard({ title, items, loading }) {
   const total = items.reduce((sum, item) => sum + item.value, 0);
   const radius = 43;
   const circumference = 2 * Math.PI * radius;
@@ -128,7 +128,6 @@ function DonutCard({ title, caption, items, loading }) {
         <div>
           <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#ff5b62]">Distribución</p>
           <h2 className="mt-2 text-lg font-black text-white">{title}</h2>
-          <p className="mt-1 text-xs font-medium text-gray-500">{caption}</p>
         </div>
         <span className="grid size-10 shrink-0 place-items-center rounded-2xl border border-[#e71921]/20 bg-[#e71921]/10 text-[#ff5b62]" aria-hidden="true">◌</span>
       </div>
@@ -183,7 +182,7 @@ function DonutCard({ title, caption, items, loading }) {
   );
 }
 
-function StatCard({ label, value, detail, symbol }) {
+function StatCard({ label, value, symbol }) {
   return (
     <article className="group relative overflow-hidden rounded-3xl border border-white/[0.08] bg-gradient-to-br from-[#191919] to-[#101010] p-5 shadow-[0_18px_45px_rgba(0,0,0,0.3)] transition duration-300 hover:-translate-y-1 hover:border-[#e71921]/35">
       <div className="pointer-events-none absolute -right-10 -top-12 size-36 rounded-full bg-[#e71921]/[0.08] blur-2xl transition group-hover:bg-[#e71921]/[0.15]" />
@@ -201,9 +200,6 @@ function StatCard({ label, value, detail, symbol }) {
         {value}
       </p>
 
-      <p className="relative mt-2 text-xs font-medium leading-5 text-gray-500">
-        {detail}
-      </p>
     </article>
   );
 }
@@ -246,6 +242,7 @@ export default function Dashboard({ panelType = "admin" }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [lastUpdated, setLastUpdated] = useState(null);
+  const [pendingOrdersCount, setPendingOrdersCount] = useState(null);
   const [salesPeriod, setSalesPeriod] = useState("current");
   const [salesFrom, setSalesFrom] = useState(localDateKey(new Date(new Date().getFullYear(), new Date().getMonth(), 1)));
   const [salesTo, setSalesTo] = useState(localDateKey(new Date()));
@@ -294,9 +291,45 @@ export default function Dashboard({ panelType = "admin" }) {
     }
   }, []);
 
+  const refreshPendingOrdersCount = useCallback(async () => {
+    const { count, error: countError } = await supabase
+      .from("pedidos")
+      .select("id", { count: "exact", head: true })
+      .in("estado", ["pendiente", "confirmado"]);
+
+    if (countError) {
+      console.error("Error actualizando pedidos por atender:", countError);
+      return;
+    }
+
+    setPendingOrdersCount(count || 0);
+  }, []);
+
   useEffect(() => {
     loadDashboard();
-  }, [loadDashboard]);
+    refreshPendingOrdersCount();
+
+    const interval = window.setInterval(() => {
+      if (!document.hidden) refreshPendingOrdersCount();
+    }, 15_000);
+    const handleFocus = () => refreshPendingOrdersCount();
+    const channel = supabase
+      .channel("dashboard-pending-orders")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "pedidos" },
+        refreshPendingOrdersCount
+      )
+      .subscribe();
+
+    window.addEventListener("focus", handleFocus);
+
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener("focus", handleFocus);
+      supabase.removeChannel(channel);
+    };
+  }, [loadDashboard, refreshPendingOrdersCount]);
 
   const stats = useMemo(() => {
     const now = new Date();
@@ -584,7 +617,6 @@ export default function Dashboard({ panelType = "admin" }) {
           ? "Dashboard general"
           : "Dashboard"
       }
-      description="Resumen de la actividad de Jalu Comidas Árabes con información obtenida de los pedidos y las reservas registrados."
     >
       <div className="flex min-w-0 flex-col items-stretch justify-between gap-3 rounded-2xl border border-white/[0.07] bg-gradient-to-r from-[#171717] to-[#101010] px-4 py-3 shadow-[0_12px_34px_rgba(0,0,0,0.28)] sm:flex-row sm:items-center sm:px-5">
         <p className="min-w-0 break-words text-xs font-bold text-gray-500">
@@ -621,7 +653,6 @@ export default function Dashboard({ panelType = "admin" }) {
           value={
             loading ? "—" : numberFormatter.format(stats.ordersToday)
           }
-          detail="Pedidos registrados hoy, sin contar los cancelados."
           symbol="↗"
         />
 
@@ -630,16 +661,16 @@ export default function Dashboard({ panelType = "admin" }) {
           value={
             loading ? "—" : formatMoney(stats.revenueThisMonth)
           }
-          detail="Suma de pedidos finalizados durante el mes actual."
           symbol="$"
         />
 
         <StatCard
           label="Pedidos por atender"
           value={
-            loading ? "—" : numberFormatter.format(stats.pendingOrders)
+            loading
+              ? "—"
+              : numberFormatter.format(pendingOrdersCount ?? stats.pendingOrders)
           }
-          detail="Pedidos pendientes o confirmados que aún no se finalizaron."
           symbol="▣"
         />
 
@@ -650,7 +681,6 @@ export default function Dashboard({ panelType = "admin" }) {
               ? "—"
               : numberFormatter.format(stats.pendingReservations)
           }
-          detail="Reservas que todavía necesitan confirmación."
           symbol="◷"
         />
       </section>
@@ -659,13 +689,11 @@ export default function Dashboard({ panelType = "admin" }) {
         <StatCard
           label="Cobrado en efectivo"
           value={loading ? "—" : formatMoney(stats.finalizedCash)}
-          detail="Pedidos finalizados y cobrados durante el mes actual."
           symbol="💵"
         />
         <StatCard
           label="Cobrado por transferencia"
           value={loading ? "—" : formatMoney(stats.finalizedTransfer)}
-          detail="Pedidos finalizados y cobrados durante el mes actual."
           symbol="📲"
         />
       </section>
@@ -673,7 +701,6 @@ export default function Dashboard({ panelType = "admin" }) {
       <section className="rounded-3xl border border-white/[0.08] bg-gradient-to-br from-[#191919] via-[#121212] to-[#0d0d0d] p-5 shadow-[0_24px_70px_rgba(0,0,0,0.35)] sm:p-6">
         <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#ff5b62]">Ventas y facturación</p>
         <h2 className="mt-2 text-lg font-black text-white">Historial de ventas cobradas</h2>
-        <p className="mt-1 text-sm text-gray-500">Consultá el mes actual, el mes anterior o un rango personalizado. No requiere abrir ni cerrar caja.</p>
         <div className="mt-4 grid gap-2 sm:grid-cols-3">
           <button type="button" onClick={() => setSalesPeriod("current")} className={`min-h-10 rounded-xl px-3 text-xs font-black uppercase ${salesPeriod === "current" ? "bg-[#e71921] text-white" : "border border-white/10 text-gray-300"}`}>Mes actual</button>
           <button type="button" onClick={() => setSalesPeriod("previous")} className={`min-h-10 rounded-xl px-3 text-xs font-black uppercase ${salesPeriod === "previous" ? "bg-[#e71921] text-white" : "border border-white/10 text-gray-300"}`}>Mes anterior</button>
@@ -689,7 +716,6 @@ export default function Dashboard({ panelType = "admin" }) {
           <div className="rounded-2xl border border-white/[0.07] bg-black/25 p-4"><p className="text-xs font-bold text-gray-500">Transferencia</p><p className="mt-2 text-2xl font-black text-white">{formatMoney(salesReport.transfer)}</p></div>
           <div className="rounded-2xl border border-white/[0.07] bg-black/25 p-4"><p className="text-xs font-bold text-gray-500">Pedidos cobrados</p><p className="mt-2 text-2xl font-black text-white">{numberFormatter.format(salesReport.orders.length)}</p></div>
         </div>
-        <p className="mt-3 text-xs text-gray-500">Período: {salesReport.from} al {salesReport.to}. Los pedidos finalizados antes de implementar los medios de pago podrían no tener importes separados y aparecerán en el total histórico.</p>
         <button type="button" onClick={descargarInformeVentas} disabled={loading || Boolean(error)} className="mt-4 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#e71921] px-4 text-xs font-black uppercase text-white transition hover:bg-[#ff2a33] disabled:opacity-50"><FaFilePdf aria-hidden="true" /> Descargar informe de este período</button>
         <div className="mt-4 overflow-x-auto">
           <table className="w-full min-w-[560px] text-left">
@@ -704,13 +730,11 @@ export default function Dashboard({ panelType = "admin" }) {
       <section aria-label="Distribución por estado" className="grid min-w-0 grid-cols-1 gap-5 xl:grid-cols-2">
         <DonutCard
           title="Estado de pedidos"
-          caption="Todos los pedidos cargados"
           items={stats.orderStatuses}
           loading={loading}
         />
         <DonutCard
           title="Estado de reservas"
-          caption="Todas las reservas cargadas"
           items={stats.reservationStatuses}
           loading={loading}
         />
@@ -778,10 +802,6 @@ export default function Dashboard({ panelType = "admin" }) {
                 ))}
               </div>
 
-              <p className="mt-4 text-xs leading-5 text-gray-500">
-                El gráfico suma únicamente pedidos finalizados.
-                Los días sin ventas registradas aparecen sin barra.
-              </p>
             </div>
           )}
         </div>
@@ -942,9 +962,6 @@ export default function Dashboard({ panelType = "admin" }) {
         <h2 className="mt-2 text-lg font-black text-white">
           Descargar información del dashboard
         </h2>
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-500">
-          Generá un PDF con los indicadores, los pedidos y las reservas del día o de la semana actual.
-        </p>
         <div className="mt-5 grid gap-3 sm:grid-cols-2">
           <button
             type="button"

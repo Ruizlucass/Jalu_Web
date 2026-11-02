@@ -189,6 +189,35 @@ export default function Completed({ panelType = "admin" }) {
       : activeTab === "cancelados"
         ? [...filteredCancelledOrders, ...filteredCancelledReservations]
         : filteredReservations;
+  const completedOrderTotal = filteredOrders.reduce(
+    (total, order) => total + (Number(order.total) || 0),
+    0
+  );
+  const cancelledOrderTotal = filteredCancelledOrders.reduce(
+    (total, order) => total + (Number(order.total) || 0),
+    0
+  );
+  const reservationPeople = filteredReservations.reduce(
+    (total, reservation) => total + (Number(reservation.personas) || 0),
+    0
+  );
+  const totals =
+    activeTab === "pedidos"
+      ? [
+          { label: "Pedidos finalizados", value: filteredOrders.length },
+          { label: "Total vendido", value: formatMoney(completedOrderTotal) },
+        ]
+      : activeTab === "reservas"
+        ? [
+            { label: "Reservas finalizadas", value: filteredReservations.length },
+            { label: "Personas", value: reservationPeople },
+          ]
+        : [
+            { label: "Cancelaciones", value: records.length },
+            { label: "Pedidos cancelados", value: filteredCancelledOrders.length },
+            { label: "Reservas canceladas", value: filteredCancelledReservations.length },
+            { label: "Importe de pedidos cancelados", value: formatMoney(cancelledOrderTotal) },
+          ];
   const pageCount = Math.max(1, Math.ceil(records.length / PAGE_SIZE));
   const currentPage = Math.min(page, pageCount);
   const paginatedOrders = filteredOrders.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
@@ -221,7 +250,6 @@ export default function Completed({ panelType = "admin" }) {
     <PageShell
       eyebrow="Reportes"
       title="Reportes"
-      description="Consultá pedidos y reservas finalizados o cancelados por día, semana, mes o un rango de fechas."
     >
       <ActivityDateFilter
         fromDate={activityDate}
@@ -240,11 +268,6 @@ export default function Completed({ panelType = "admin" }) {
           disabled={activeTab === "reservas"}
           className="min-h-11 w-full rounded-lg border border-white/10 bg-[#0f0f0f] px-3 text-sm font-bold normal-case tracking-normal text-white placeholder:text-neutral-600 focus:border-[#e71921] focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
         />
-        <span className="normal-case font-medium tracking-normal text-neutral-500">
-          {activeTab === "reservas"
-            ? "La búsqueda por plato está disponible para pedidos."
-            : "Buscá platos dentro del período o rango de fechas seleccionado."}
-        </span>
       </label>
 
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
@@ -296,6 +319,29 @@ export default function Completed({ panelType = "admin" }) {
           <span className="rounded-full bg-black/20 px-2 py-1 text-[10px]">{filteredCancelledOrders.length + filteredCancelledReservations.length}</span>
         </button>
       </div>
+
+      <section
+        aria-labelledby="report-totals-title"
+        className="rounded-2xl border border-white/10 bg-[#101010] p-4 sm:p-5"
+      >
+        <div className="mb-4">
+          <h2 id="report-totals-title" className="text-sm font-black uppercase tracking-wider text-white">
+            Totales según los filtros
+          </h2>
+        </div>
+        <div className={`grid gap-3 ${totals.length > 2 ? "sm:grid-cols-2 xl:grid-cols-4" : "sm:grid-cols-2"}`}>
+          {totals.map((item) => (
+            <article key={item.label} className="rounded-xl border border-white/[0.08] bg-white/[0.035] p-4">
+              <p className="text-[10px] font-black uppercase tracking-wider text-neutral-500">
+                {item.label}
+              </p>
+              <p className="mt-2 text-2xl font-black text-white">
+                {loading ? "—" : item.value}
+              </p>
+            </article>
+          ))}
+        </div>
+      </section>
 
       <AdminSection
         eyebrow={config.label}

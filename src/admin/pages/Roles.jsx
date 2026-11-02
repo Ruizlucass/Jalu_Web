@@ -26,10 +26,8 @@ export default function Roles() {
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "");
 
-    if (!roleFilter) return [];
-
     return users.filter((user) => {
-      if (String(user.roleId) !== String(roleFilter)) return false;
+      if (!roleFilter || String(user.roleId) !== String(roleFilter)) return false;
       if (!normalizedSearch) return true;
 
       return String(user.name || "")
@@ -49,10 +47,27 @@ export default function Roles() {
       return 3;
     };
 
-    return [...roles].sort((first, second) =>
-      rank(first.nombre) - rank(second.nombre) ||
-      String(first.nombre).localeCompare(String(second.nombre), "es-AR")
-    );
+    const sortedRoles = roles
+      .filter((role) =>
+        ["cliente", "usuario", "usuarios", "admin", "superadmin"].includes(
+          String(role.nombre || "").trim().toLocaleLowerCase("es-AR")
+        )
+      )
+      .sort((first, second) =>
+        rank(first.nombre) - rank(second.nombre) ||
+        String(first.nombre).localeCompare(String(second.nombre), "es-AR")
+      );
+
+    const seenRoleTypes = new Set();
+    return sortedRoles.filter((role) => {
+      const name = String(role.nombre || "").trim().toLocaleLowerCase("es-AR");
+      const roleType = ["cliente", "usuario", "usuarios"].includes(name)
+        ? "usuario"
+        : name;
+      if (seenRoleTypes.has(roleType)) return false;
+      seenRoleTypes.add(roleType);
+      return true;
+    });
   }, [roles]);
 
   async function loadData() {
@@ -61,14 +76,13 @@ export default function Roles() {
     setSuccess("");
 
     try {
-      const [profilesResult, rolesResult] = await Promise.all([
-        roleFilter
-          ? queryProfiles({ roleId: roleFilter })
-          : Promise.resolve({ data: [], error: null }),
+      const [profilesResult, rolesResult, sessionResult] = await Promise.all([
+        queryProfiles(),
         supabase
           .from("roles")
           .select("id, nombre")
           .order("nombre", { ascending: true }),
+        supabase.auth.getSession(),
       ]);
 
       if (profilesResult.error) {
@@ -79,14 +93,27 @@ export default function Roles() {
         throw rolesResult.error;
       }
 
+      if (sessionResult.error) {
+        throw sessionResult.error;
+      }
+
+      const availableRoles = rolesResult.data || [];
+      const userRole =
+        availableRoles.find(
+          (role) => String(role.nombre || "").trim().toLocaleLowerCase("es-AR") === "cliente"
+        ) ||
+        availableRoles.find((role) =>
+          ["usuario", "usuarios"].includes(
+            String(role.nombre || "").trim().toLocaleLowerCase("es-AR")
+          )
+        );
+
+      setCurrentUserId(sessionResult.data?.session?.user?.id || "");
       setProfiles(profilesResult.data || []);
-      setRoles(rolesResult.data || []);
-
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      setCurrentUserId(session?.user?.id || "");
+      setRoles(availableRoles);
+      if (!roleFilter) {
+        setRoleFilter(String(userRole?.id || availableRoles[0]?.id || ""));
+      }
     } catch (loadError) {
       console.error("Error cargando roles:", loadError);
       setError(
@@ -141,7 +168,7 @@ export default function Roles() {
     } catch (updateError) {
       console.error("Error actualizando rol:", updateError);
       setError(
-        "No se pudo actualizar el rol. Confirmá que el usuario actual sea superadmin y tenga permiso de update en profiles."
+        "No se pudo cambiar el rol. Ejecutá supabase-admin-users.sql en Supabase y volvé a intentar."
       );
     } finally {
       setSavingUserId("");
@@ -152,32 +179,17 @@ export default function Roles() {
     loadData();
   }, []);
 
-  async function handleRoleFilterChange(roleId) {
+  function handleRoleFilterChange(roleId) {
     setRoleFilter(roleId);
     setNameSearch("");
-    setProfiles([]);
     setError("");
     setSuccess("");
-    if (!roleId) return;
-
-    setLoading(true);
-    try {
-      const profilesResult = await queryProfiles({ roleId });
-      if (profilesResult.error) throw profilesResult.error;
-      setProfiles(profilesResult.data || []);
-    } catch (loadError) {
-      console.error("Error cargando usuarios por rol:", loadError);
-      setError("No se pudieron cargar los usuarios para el rol seleccionado.");
-    } finally {
-      setLoading(false);
-    }
   }
 
   return (
     <PageShell
       eyebrow="Roles"
       title="Cambiar rol de usuario"
-      description="Solo el superadmin puede modificar permisos reales de usuarios."
     >
       <AdminSection
         eyebrow="Superadmin"
@@ -194,11 +206,10 @@ export default function Roles() {
               onChange={(event) => handleRoleFilterChange(event.target.value)}
               className="min-h-11 rounded-lg border border-white/10 bg-[#0f0f0f] px-3 text-sm font-bold uppercase tracking-wide text-white outline-none transition focus:border-[#e71921] focus:shadow-[0_0_0_3px_rgba(231,25,33,0.16)]"
             >
-              <option value="">Elegí un rol</option>
               {orderedRoleOptions.map((role) => {
                 const name = String(role.nombre || "").trim().toLocaleLowerCase("es-AR");
                 const label = ["cliente", "usuario", "usuarios"].includes(name)
-                  ? "USUARIOS"
+                  ? "CLIENTE"
                   : String(role.nombre || "").toLocaleUpperCase("es-AR");
                 return (
                   <option key={role.id} value={String(role.id)}>
@@ -215,6 +226,7 @@ export default function Roles() {
               value={nameSearch}
               onChange={(event) => setNameSearch(event.target.value)}
               placeholder="Escribí el nombre del usuario"
+              disabled={!roleFilter}
               className="min-h-11 rounded-lg border border-white/10 bg-[#0f0f0f] px-3 text-sm font-bold normal-case tracking-normal text-white placeholder:text-gray-600 outline-none transition focus:border-[#e71921] focus:shadow-[0_0_0_3px_rgba(231,25,33,0.16)]"
             />
           </label>
@@ -239,29 +251,29 @@ export default function Roles() {
             </p>
           )}
 
-          {!loading && !error && !roleFilter && (
+          {!loading && !error && users.length === 0 && (
+            <p className="rounded-lg border border-white/5 bg-white/[0.03] p-4 text-sm font-bold text-gray-400">
+              No hay usuarios registrados.
+            </p>
+          )}
+
+          {!loading && !error && users.length > 0 && !roleFilter && (
             <p className="rounded-lg border border-white/5 bg-white/[0.03] p-4 text-sm font-bold text-gray-400">
               Seleccioná un rol para ver sus usuarios.
             </p>
           )}
 
-          {!loading && !error && roleFilter && users.length === 0 && (
-            <p className="rounded-lg border border-white/5 bg-white/[0.03] p-4 text-sm font-bold text-gray-400">
-              No hay usuarios asignados a ese rol.
-            </p>
-          )}
-
-          {!loading && !error && users.length > 0 && roleFilter && visibleUsers.length === 0 && (
+          {!loading && !error && roleFilter && users.length > 0 && visibleUsers.length === 0 && (
             <p className="rounded-lg border border-white/5 bg-white/[0.03] p-4 text-sm font-bold text-gray-400">
               No se encontraron usuarios para ese rol y nombre.
             </p>
           )}
 
-          {!loading && visibleUsers.map((user) => (
+          {!loading && roleFilter && visibleUsers.map((user) => (
             <RoleRow
               key={user.id}
               user={user}
-              roles={roles}
+              roles={orderedRoleOptions}
               currentUserId={currentUserId}
               savingUserId={savingUserId}
               onRoleChange={updateUserRole}

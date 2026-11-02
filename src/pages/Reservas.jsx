@@ -19,6 +19,8 @@ import {
   validateReservationDateTime,
 } from "../config/businessHours.js";
 
+const MAX_RESERVATIONS_PER_DAY = 2;
+
 export default function Reservas() {
   const [session, setSession] = useState(null);
 
@@ -34,6 +36,9 @@ export default function Reservas() {
     useState("login");
 
   const [enviando, setEnviando] =
+    useState(false);
+
+  const [verificandoLimite, setVerificandoLimite] =
     useState(false);
 
   const [mensaje, setMensaje] =
@@ -113,7 +118,23 @@ export default function Reservas() {
   }
 
   function handleChange(e) {
-    const { name, value } = e.target;
+    const { name } = e.target;
+    let { value } = e.target;
+
+    if (name === "nombre") {
+      value = value
+        .replace(/[^a-zA-ZáéíóúÁÉÍÓÚüÜñÑ' -]/g, "")
+        .replace(/\s{2,}/g, " ")
+        .slice(0, 20);
+    }
+
+    if (name === "telefono") {
+      value = value.replace(/\D/g, "").slice(0, 10);
+    }
+
+    if (name === "personas" && value !== "") {
+      value = String(Math.max(1, Math.floor(Number(value) || 1)));
+    }
 
     setForm((actual) => ({
       ...actual,
@@ -154,8 +175,10 @@ export default function Reservas() {
     setAuthOpen(true);
   }
 
-  function guardarReserva(e) {
+  async function guardarReserva(e) {
     e.preventDefault();
+
+    if (verificandoLimite || enviando) return;
 
     setError("");
     setMensaje("");
@@ -169,8 +192,12 @@ export default function Reservas() {
       form.personas
     );
 
+    const nombreCompleto = form.nombre.trim();
+    const partesNombre = nombreCompleto.split(/\s+/).filter(Boolean);
+    const telefonoNumeros = form.telefono.replace(/\D/g, "");
+
     if (
-      !form.nombre.trim() ||
+      !nombreCompleto ||
       !form.telefono.trim() ||
       !form.sucursal ||
       !form.fecha ||
@@ -182,9 +209,25 @@ export default function Reservas() {
       return;
     }
 
-    if (personas < 1) {
+    if (
+      partesNombre.length < 2 ||
+      nombreCompleto.length > 20 ||
+      partesNombre.some((parte) => parte.length < 2)
+    ) {
       setError(
-        "La cantidad de personas debe ser mayor a 0."
+        "Ingresá nombre y apellido. El máximo permitido es de 20 caracteres en total."
+      );
+      return;
+    }
+
+    if (telefonoNumeros.length !== 10) {
+      setError("Ingresá un teléfono válido de 10 dígitos. Ejemplo: 3816135274.");
+      return;
+    }
+
+    if (!Number.isInteger(personas) || personas < 1) {
+      setError(
+        "La cantidad de personas debe ser un número entero mayor a 0."
       );
       return;
     }
@@ -208,7 +251,44 @@ export default function Reservas() {
       return;
     }
 
-    setConfirmOpen(true);
+    setVerificandoLimite(true);
+    try {
+      const [activeResult, dailyResult] = await Promise.all([
+        supabase
+          .from("reservas")
+          .select("id")
+          .eq("user_id", session.user.id)
+          .in("estado", ["pendiente", "confirmado"])
+          .limit(1),
+        supabase
+          .from("reservas")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", session.user.id)
+          .eq("fecha", form.fecha),
+      ]);
+
+      if (activeResult.error) throw activeResult.error;
+      if (dailyResult.error) throw dailyResult.error;
+
+      if (activeResult.data?.length) {
+        setError(
+          "Ya tenés una reserva pendiente o confirmada. Podés reservar de nuevo cuando esté finalizada o cancelada."
+        );
+        return;
+      }
+
+      if ((dailyResult.count || 0) >= MAX_RESERVATIONS_PER_DAY) {
+        setError(`Ya alcanzaste el máximo de ${MAX_RESERVATIONS_PER_DAY} reservas para ese día.`);
+        return;
+      }
+
+      setConfirmOpen(true);
+    } catch (limitError) {
+      console.error("Error verificando el límite de reservas:", limitError);
+      setError("No pudimos verificar tus reservas vigentes. Intentá nuevamente.");
+    } finally {
+      setVerificandoLimite(false);
+    }
   }
 
   async function confirmarReserva() {
@@ -263,6 +343,18 @@ export default function Reservas() {
           "Error registrando reserva:",
           supabaseError
         );
+
+        if (supabaseError.message?.includes("ACTIVE_RESERVATION_EXISTS")) {
+          setConfirmOpen(false);
+          setError("Ya tenés una reserva pendiente o confirmada. Podés reservar de nuevo cuando esté finalizada o cancelada.");
+          return;
+        }
+
+        if (supabaseError.message?.includes("DAILY_RESERVATION_LIMIT_REACHED")) {
+          setConfirmOpen(false);
+          setError(`Ya alcanzaste el máximo de ${MAX_RESERVATIONS_PER_DAY} reservas para ese día.`);
+          return;
+        }
 
         setError(
           "No pudimos registrar la reserva. Intentá nuevamente."
@@ -419,6 +511,9 @@ export default function Reservas() {
               <h3 className="mt-2 text-3xl font-black">
                 Datos de tu reserva
               </h3>
+              <p className="mt-2 text-xs font-semibold text-gray-500">
+                Máximo {MAX_RESERVATIONS_PER_DAY} reservas por día y una vigente a la vez.
+              </p>
             </div>
 
             {/* AVISO LOGIN */}
@@ -465,7 +560,7 @@ export default function Reservas() {
               {/* NOMBRE */}
               <div>
                 <label className="mb-2 block text-sm font-semibold text-gray-300">
-                  Nombre y apellido
+                  Nombre y apellido <span className="text-gray-500">(máx. 20 caracteres)</span>
                 </label>
 
                 <input
@@ -474,7 +569,9 @@ export default function Reservas() {
                   value={form.nombre}
                   onChange={handleChange}
                   placeholder="Nombre completo"
+                  maxLength={20}
                   autoComplete="name"
+                  required
                   className="w-full rounded-xl border border-white/10 bg-[#090909] px-4 py-3.5 text-white outline-none transition placeholder:text-gray-600 focus:border-[#e71921]"
                 />
               </div>
@@ -482,7 +579,7 @@ export default function Reservas() {
               {/* TELÉFONO */}
               <div>
                 <label className="mb-2 block text-sm font-semibold text-gray-300">
-                  Teléfono
+                  Teléfono <span className="text-gray-500">(10 dígitos)</span>
                 </label>
 
                 <input
@@ -490,8 +587,12 @@ export default function Reservas() {
                   name="telefono"
                   value={form.telefono}
                   onChange={handleChange}
-                  placeholder="381..."
+                  placeholder="3816135274"
+                  maxLength={10}
+                  inputMode="numeric"
+                  pattern="[0-9]{10}"
                   autoComplete="tel"
+                  required
                   className="w-full rounded-xl border border-white/10 bg-[#090909] px-4 py-3.5 text-white outline-none transition placeholder:text-gray-600 focus:border-[#e71921]"
                 />
               </div>
@@ -506,6 +607,7 @@ export default function Reservas() {
                   name="sucursal"
                   value={form.sucursal}
                   onChange={handleChange}
+                  required
                   className="w-full rounded-xl border border-white/10 bg-[#090909] px-4 py-3.5 text-white outline-none transition focus:border-[#e71921]"
                 >
                   <option value="">
@@ -606,6 +708,7 @@ export default function Reservas() {
                 <input
                   type="number"
                   min="1"
+                  step="1"
                   name="personas"
                   value={form.personas}
                   onChange={handleChange}
@@ -639,9 +742,13 @@ export default function Reservas() {
                   value={form.comentarios}
                   onChange={handleChange}
                   rows="4"
+                  maxLength={200}
                   placeholder="Cumpleaños, ubicación de mesa, observaciones..."
                   className="w-full resize-none rounded-xl border border-white/10 bg-[#090909] px-4 py-3.5 text-white outline-none transition placeholder:text-gray-600 focus:border-[#e71921]"
                 />
+                <p className="mt-1 text-xs text-gray-500">
+                  Máximo 200 caracteres.
+                </p>
               </div>
 
               {/* ERROR */}
@@ -678,12 +785,14 @@ export default function Reservas() {
               ) : (
                 <button
                   type="submit"
-                  disabled={enviando}
+                  disabled={enviando || verificandoLimite}
                   className="w-full rounded-xl bg-[#e71921] px-6 py-4 font-black text-white transition hover:bg-[#ff252d] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {enviando
                     ? "Registrando..."
-                    : "Reservar mesa"}
+                    : verificandoLimite
+                      ? "Verificando..."
+                      : "Reservar mesa"}
                 </button>
               )}
             </form>

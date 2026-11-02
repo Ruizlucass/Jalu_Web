@@ -21,9 +21,8 @@ export default function Menu() {
     }
   });
 
-  const [offers, setOffers] = useState([]);
-  const [offersLoading, setOffersLoading] = useState(true);
-  const [offersLoadError, setOffersLoadError] = useState(false);
+  const [bannerImages, setBannerImages] = useState([]);
+  const [bannersLoading, setBannersLoading] = useState(true);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
 
@@ -79,42 +78,46 @@ export default function Menu() {
     loadProducts();
   }, [loadProducts]);
 
-  // Cargar ofertas vigentes.
+  // Cargar imágenes del carrusel.
   useEffect(() => {
     let mounted = true;
-    const now = new Date().toISOString();
 
-    async function loadOffers() {
+    async function loadBannerImages() {
       try {
+        const now = new Date().toISOString();
         const { data, error } = await supabase
-          .from("promociones")
-          .select(
-            "id, titulo, descripcion, tipo_descuento, valor_descuento, fecha_inicio, fecha_fin, imagen_url, aplica_todas_sucursales, sucursales_aplicables"
-          )
-          .eq("activa", true)
+          .from("banners_menu")
+          .select("id, imagen_url")
           .lte("fecha_inicio", now)
-          .gt("fecha_fin", now)
-          .order("fecha_fin", { ascending: true });
+          .gt("fecha_limite", now)
+          .order("created_at", { ascending: false });
 
-        if (error) throw error;
+        if (error) {
+          console.error("Error cargando ofertas nuevas; se consultan las anteriores:", error);
+          const { data: legacyOffers, error: legacyError } = await supabase
+            .from("promociones")
+            .select("id, imagen_url")
+            .eq("activa", true)
+            .lte("fecha_inicio", now)
+            .gt("fecha_fin", now)
+            .not("imagen_url", "is", null);
 
-        if (mounted) {
-          setOffers(data || []);
-          setOffersLoadError(false);
+          if (legacyError) throw legacyError;
+          if (mounted) setBannerImages(legacyOffers || []);
+          return;
         }
+
+        if (mounted) setBannerImages(data || []);
       } catch (error) {
-        console.error("Error cargando ofertas vigentes:", error);
+        console.error("Error cargando ofertas:", error);
 
-        if (mounted) {
-          setOffers([]);
-          setOffersLoadError(true);
-        }
+        if (mounted) setBannerImages([]);
       } finally {
-        if (mounted) setOffersLoading(false);
+        if (mounted) setBannersLoading(false);
       }
     }
 
-    loadOffers();
+    loadBannerImages();
 
     return () => {
       mounted = false;
@@ -223,51 +226,33 @@ export default function Menu() {
         </div>
       </section>
 
-      {/* OFERTAS VIGENTES */}
       <section
         id="ofertas"
-        aria-labelledby="ofertas-title"
-        className="mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 sm:py-16"
+        aria-labelledby="menu-offers-title"
+        className="mx-auto w-full max-w-5xl px-3 py-6 sm:px-6 sm:py-9"
       >
-        <div className="mb-8 text-center">
-          <span className="text-sm font-black uppercase tracking-[0.3em] text-[#e71921]">
-            Elegí algo especial
-          </span>
-
+        <div className="mb-4 text-center sm:mb-6">
+          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#ff555b] sm:text-xs">
+            Para disfrutar
+          </p>
           <h2
-            id="ofertas-title"
-            className="mt-3 text-3xl font-black uppercase sm:text-4xl md:text-5xl"
+            id="menu-offers-title"
+            className="mt-1 text-2xl font-black uppercase leading-none tracking-tight text-white sm:text-3xl"
           >
-            Ofertas vigentes
+            Ofertas
           </h2>
-
-          <p className="mx-auto mt-4 max-w-xl text-sm leading-6 text-gray-400">
-            Aprovechá nuestras promociones mientras estén disponibles.
-          </p>
+          <span className="mx-auto mt-3 block h-1 w-12 rounded-full bg-[#e71921] shadow-[0_0_14px_rgba(231,25,33,0.6)]" />
         </div>
-
-        {/* CARRUSEL DE PROMOCIONES */}
-        {offersLoading ? (
-          <p
-            className="py-6 text-center text-sm font-bold text-gray-400"
-            role="status"
-          >
-            Buscando ofertas vigentes...
-          </p>
-        ) : offers.length > 0 ? (
-          <OffersCarousel offers={offers} />
-        ) : offersLoadError ? (
-          <p
-            className="rounded-xl border border-amber-500/25 bg-amber-500/[0.06] px-5 py-8 text-center text-sm font-bold text-amber-200"
-            role="status"
-          >
-            No pudimos cargar las ofertas en este momento.
-          </p>
+        {bannersLoading ? (
+          <div className="grid min-h-32 place-items-center rounded-2xl border border-white/10 bg-[#100d0d] text-sm font-bold text-gray-500">
+            Cargando ofertas...
+          </div>
+        ) : bannerImages.length > 0 ? (
+          <OffersCarousel images={bannerImages} />
         ) : (
-          <p className="rounded-xl border border-white/10 bg-white/[0.03] px-5 py-8 text-center text-sm font-bold text-gray-400">
-            En este momento no hay ofertas vigentes. Volvé pronto para
-            conocer las próximas promociones.
-          </p>
+          <div className="grid min-h-32 place-items-center rounded-2xl border border-white/10 bg-[#100d0d] px-5 text-center text-sm font-bold text-gray-500">
+            No hay ofertas activas en este momento.
+          </div>
         )}
       </section>
 

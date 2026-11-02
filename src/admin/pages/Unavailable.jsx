@@ -5,7 +5,6 @@ export default function Unavailable({ panelType = "admin" }) {
     <PageShell
       eyebrow={panelType === "superadmin" ? "Superadmin" : "Admin"}
       title="Seccion no disponible"
-      description="Esta vista no esta habilitada para este panel visual."
     >
       <a
         href={panelType === "superadmin" ? "/superadmin" : "/admin"}

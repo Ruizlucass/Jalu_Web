@@ -145,7 +145,6 @@ export default function Cancelled({
     <PageShell
       eyebrow="Historial"
       title="Cancelados"
-      description="Pedidos y reservas cancelados por clientes o personal de Jalu."
     >
       <AdminSection
         eyebrow={panelType}

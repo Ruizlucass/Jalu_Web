@@ -158,7 +158,6 @@ export default function Reservations({ panelType = "admin" }) {
     <PageShell
       eyebrow="Reservas"
       title="Reservas del día"
-      description="Se muestran las reservas recibidas hoy y las programadas para hoy. Al finalizar el turno, marcá las atendidas como finalizadas para guardarlas en el historial."
     >
       <AdminSection
         eyebrow={config.label}
