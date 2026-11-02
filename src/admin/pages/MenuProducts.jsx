@@ -14,7 +14,7 @@ const CATEGORIES = [
   "Kipes",
   "Shawarma",
   "Combos",
-  "Dulces arabes",
+  "Entradas",
 ];
 
 const EMPTY_FORM = {
@@ -71,7 +71,13 @@ export default function MenuProducts({ panelType = "admin" }) {
       return;
     }
 
-    setProducts(data || []);
+    setProducts(
+      (data || []).map((product) => ({
+        ...product,
+        categoria:
+          product.categoria === "Dulces arabes" ? "Entradas" : product.categoria,
+      }))
+    );
     setLoading(false);
   }, []);
 
