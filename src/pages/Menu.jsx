@@ -54,7 +54,8 @@ export default function Menu() {
         }).format(Number(product.precio) || 0),
         rawPrice: Number(product.precio) || 0,
         image: product.imagen_url || "",
-        category: product.categoria,
+        category:
+          product.categoria === "Dulces arabes" ? "Entradas" : product.categoria,
       }));
 
       setProducts(formattedProducts);

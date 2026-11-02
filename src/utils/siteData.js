@@ -7,7 +7,7 @@ export const quickLinks = [
   { label: "Reservar", href: "/reservas" },
 ];
 
-export const menuCategories = ["Sfijas", "Kipes", "Shawarma", "Combos", "Dulces arabes"];
+export const menuCategories = ["Sfijas", "Kipes", "Shawarma", "Combos", "Entradas"];
 
 export const products = [
   {
@@ -39,7 +39,7 @@ export const products = [
     image: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=900&q=85",
   },
   {
-    category: "Dulces arabes",
+    category: "Entradas",
     name: "Baklava box",
     desc: "Capas crocantes, frutos secos y almibar.",
     price: "$4.500",

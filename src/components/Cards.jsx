@@ -60,7 +60,7 @@ export function ProductCard({ product, showOrderButton = true }) {
 
 export function Combos() {
   const featured = products.filter((product) =>
-    ["Shawarma", "Combos", "Sfijas", "Dulces arabes"].includes(product.category)
+    ["Shawarma", "Combos", "Sfijas", "Entradas"].includes(product.category)
   );
 
   return (
